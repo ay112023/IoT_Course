@@ -39,7 +39,7 @@ void sendO(){
 
 void sendDivider(){
   Serial.println(); 
-  delay(600);  
+  delay(500);  
 }
 
 void loop() {
