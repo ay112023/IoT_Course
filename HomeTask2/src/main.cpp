@@ -15,7 +15,7 @@
 unsigned long lastSensorRead = 0;
 // Таймер для аналізу пам'яті
 unsigned long lastMemoryAnalyzed = 0;
-
+// Таймер для LED
 unsigned long lastBlinkTime = 0;
 
 // Структура для зберігання даних сенсора
