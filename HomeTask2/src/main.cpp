@@ -83,12 +83,13 @@ void setup() {
 void loop() {
   unsigned long now = millis();
   
-
+   // Мигає світлодіодом кожні 200 мс
   if(now - lastBlinkTime >= LED_BLINK_INTERVAL) {
     lastBlinkTime = now;
     digitalWrite(EXT_LED, !digitalRead(EXT_LED)); 
   }
-
+  
+  // Читає й виводе дані сенсора кожні 20 секунд
   if (now - lastSensorRead >= SENSOR_INTERVAL) {
     lastSensorRead = now;
     SensorData reading;
@@ -96,6 +97,7 @@ void loop() {
     printSensorData(&reading);
   }
   
+  // Виводе FreeHeap кожні 60 секунд
   if(now - lastMemoryAnalyzed >= MEMORY_ANALYSIS_INTERVAL) {
     lastMemoryAnalyzed = now;
     printMemoryAnalysis();
