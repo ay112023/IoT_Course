@@ -1,4 +1,7 @@
 
+   Розміщення змінних у пам'яті
+
+
    Символічні константи, подставляються препроцесором
    у місце виклику, не використоують RAM
 
@@ -14,7 +17,7 @@
 #define MEMORY_ANALYSIS_INTERVAL 60000 
 
     Глобальні змінні, що ініціалізуються значеннями по замочуваню (0),
-    розміщуються у секції .bss, живуть весь час
+    розміщуються у секції .bss, живуть весь час, доступні усюди
   
 unsigned long lastSensorRead = 0;
 unsigned long lastMemoryAnalyzed = 0;
@@ -36,6 +39,8 @@ SensorData data;
 unsigned long now;
 SensorData reading;
 
+   
+     Аналіз коду:
 
 uint8_t a = 200;
 uint8_t b = 100;
