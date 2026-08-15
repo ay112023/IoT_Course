@@ -46,8 +46,9 @@ void printSensorData(SensorData* data) {
 }
 
 
-void printMemoryAnalysis() {   
-  Serial.printf("--- Free heap: %lu bytes, ", ESP.getFreeHeap());
+void printMemoryAnalysis() { 
+  unsigned long now = millis();  
+  Serial.printf("--- Free heap: %lu bytes, Up time:  %.3f min.", ESP.getFreeHeap(), now / 60000.0);
   Serial.println();
 }
 
@@ -65,14 +66,6 @@ SensorData readSensor() {
   return data;
 }
 
-void ledOn(){    
-    digitalWrite(EXT_LED, HIGH);
-}
-
-void ledOff(){
-    digitalWrite(EXT_LED, LOW);
-}
-
 void setup() {
   Serial.begin(115200);  
   pinMode(EXT_LED, OUTPUT);
@@ -82,7 +75,7 @@ void setup() {
 
 void loop() {
   unsigned long now = millis();
-  
+
    // Мигає світлодіодом кожні 200 мс
   if(now - lastBlinkTime >= LED_BLINK_INTERVAL) {
     lastBlinkTime = now;
