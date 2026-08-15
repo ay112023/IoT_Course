@@ -36,17 +36,18 @@ uint8_t checkSensor() {
   return 0b00000010;
 }
 
+
 // Приймає вказівник — не копію структури
 void printSensorData(SensorData* data) {
   static int callCount = 0;
   callCount++;
-  Serial.printf("Reading # %d: Temp: %.1f C, Humidity: %.1f%%, Status: 0x%02X, Time: %lu ms", callCount, data->temperature, data->humidity, data->status, data->timestamp);  
+  Serial.printf("Reading # %d: Temp: %.1f C, Humidity: %.1f%%, Status: 0x%02X, Timestamp: %lu ms", callCount, data->temperature, data->humidity, data->status, data->timestamp);  
   Serial.println();
 }
 
 
 void printMemoryAnalysis() {   
-  Serial.printf("--- Free heap: %lu bytes", ESP.getFreeHeap());
+  Serial.printf("--- Free heap: %lu bytes, ", ESP.getFreeHeap());
   Serial.println();
 }
 
@@ -76,12 +77,13 @@ void setup() {
   Serial.begin(115200);  
   pinMode(EXT_LED, OUTPUT);
   delay(500);
-  Serial.println("Starting sensor reading and memory analysis...");  
+  Serial.println("Starting sensor reading and memory analysis...");    
 }
 
 void loop() {
   unsigned long now = millis();
   
+
   if(now - lastBlinkTime >= LED_BLINK_INTERVAL) {
     lastBlinkTime = now;
     digitalWrite(EXT_LED, !digitalRead(EXT_LED)); 
