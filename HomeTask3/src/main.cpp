@@ -150,12 +150,12 @@ void checkAndPost() {
           sensorpayload.timestamp    = millis();
           sensorpayload.statuscheck  = status;        
           Serial.println("[SENSOR] Дані зібрані — готові до відправки");
-          printSensorData(&sensorpayload);                        
+          printSensorData(&sensorpayload);  
+          sendData(dhttpayload.temperature, dhttpayload.humidity, ldrpayload.lux);                      
         } else{
            Serial.println("[SENSOR] Помилка валідації сенсорів або WiFi — дані не будуть відправлені"); 
            printSensorStatus(status);
-           printWiFiStatus(status);
-           sendData(dhttpayload.temperature, dhttpayload.humidity, ldrpayload.lux);
+           printWiFiStatus(status);          
         }
     }  
 }
