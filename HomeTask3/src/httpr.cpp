@@ -29,6 +29,6 @@ void sendData(float temperature, float humidity, float lux) {
         Serial.print("[HTTP] Помилка: ");
         Serial.println(httpCode);
     }
-
+    Serial.println("---------------------");
     http.end();
 }

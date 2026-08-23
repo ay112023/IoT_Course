@@ -25,6 +25,7 @@
     ["dht1:VCC", "esp:3V3", "red", []],
     ["dht1:GND", "esp:GND.1", "black", []],
     ["dht1:SDA", "esp:D4", "yellow", []]
+   
   ],
   "dependencies": {}
 }

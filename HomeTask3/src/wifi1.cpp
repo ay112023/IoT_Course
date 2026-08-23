@@ -29,7 +29,8 @@ void printWiFiStatus(uint8_t status) {
      Serial.print("Статус WiFi: 0x");
     if (status & STATUS_WIFI_ERR) 
        Serial.println("  Wi-Fi: немає з'єднання");
-    
+    else
+       Serial.println("  Wi-Fi: Connected");  
 }
 
 

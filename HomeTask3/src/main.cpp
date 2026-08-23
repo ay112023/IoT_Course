@@ -7,6 +7,7 @@
 unsigned long lastSensorReadLDR    = 0;
 unsigned long lastSensorReadDHTT   = 0;
 unsigned long lastSensorsRead = 0;
+unsigned long lastSensorsMonitor = 0;
 unsigned long lastSensorsPost = 0;
 
 
@@ -19,22 +20,22 @@ DHTTData   dhttpayload;
 // ═══════════════════════════════════════════════════════════
 // DEBOUNCE
 // ═══════════════════════════════════════════════════════════
-#define DEBOUNCE 50  // мс
+#define DEBOUNCE 100  // мс
 
 
 // ── Глобальні змінні ──────────────────────────────────
-unsigned long lastDebounce   = 0;
+unsigned long lastDebounce    = 0;
 bool          lastButtonState = HIGH;
 bool          buttonState     = HIGH;
 bool          ledState        = LOW;
 volatile bool buttonPressed   = false;
-uint8_t       currentMode;
+uint8_t       currentMode     = 0;
 
 
 // ═══════════════════════════════════════════════════════════
 // ВАЛІДАЦІЯ СЕНСОРІВ
 // ═══════════════════════════════════════════════════════════
-uint8_t validateSensorsAndWiFi() {
+uint8_t validateSensors() {
     uint8_t status = STATUS_OK;
 
     if (ldrpayload.raw < 0 || ldrpayload.raw > 4095) {
@@ -46,19 +47,29 @@ uint8_t validateSensorsAndWiFi() {
         dhttpayload.temperature < LOW_TEMPERATURE_THRESHOLD ||
         dhttpayload.temperature > HIGH_TEMPERATURE_THRESHOLD ||
         dhttpayload.humidity    < LOW_HUMIDITY_THRESHOLD    ||
-        dhttpayload.humidity    > HIGH_HUMIDITY_THRESHOLD) {
+        dhttpayload.humidity    > HIGH_HUMIDITY_THRESHOLD ) {
         status |= STATUS_DHT_ERR;
     }
-
-    if (!isWifiConnected()) {
-        status |= STATUS_WIFI_ERR;
-    }
-
+       
     return status;
 }
 
-//  Читання сенсорів
+uint8_t validateWiFi()
+{
+   uint8_t status = STATUS_OK;
+   if (!isWifiConnected()) 
+     status |= STATUS_WIFI_ERR;
+  return status;
+}
 
+// Первірка рівня освітленності
+void checkLDR()
+{    
+     ledState = (ldrpayload.lux < LOW_LDR_THRESHOLD)?HIGH:LOW;
+     digitalWrite(EXT_LED_PIN, ledState);     
+}
+
+//  Читання сенсорів
 void readLDR(){
     ldrpayload.raw    = analogRead(LDR_PIN);
     ldrpayload.lux    = adcToLux(ldrpayload.raw);       
@@ -70,8 +81,38 @@ void readDHT()
     dhttpayload.temperature = dht.readTemperature();       
 }
 
+
+void readSensorsAndCheckLDR(){
+     unsigned long now = millis();
+     if ((now - lastSensorsRead) > SENSORS_INTERVAL) {        
+        lastSensorsRead = now;                                                                       
+        readLDR();
+        readDHT();  
+        checkLDR();
+     }                  
+}
+
+// Вивід у Serial відліку часу
 void printTimeStamp(unsigned long timestamp) {
     Serial.print("Час роботи: "); Serial.print(timestamp); Serial.println(" мс");
+}
+
+// Вивід у Serial режиму работи
+void printMode(uint8_t mode)
+{
+     switch(mode)
+     {
+       case SILENT_MODE:
+       {
+         Serial.println("---Silent mode activated---");
+         break;
+       } 
+       case MONITORING_MODE:
+        {
+            Serial.println("---Monitoring mode activated---");
+            break;
+        }
+     }    
 }
 
 // Переривання для кнопки
@@ -79,25 +120,22 @@ void IRAM_ATTR onButtonPress() {
     buttonPressed = true; 
 }
 
-// Перевірка стану кнопки та перемикання режимів
+
+// Перевірка стану кнопки та перемикання режимів із виводом потчоного режима у Serial
 void checkMode(){
    if (buttonPressed) {
-       buttonPressed = false;  
-      
+       buttonPressed = false;        
        if (millis() - lastDebounce > DEBOUNCE) {
-       lastDebounce = millis();
-       if(currentMode == SILENT_MODE)
-           currentMode = MONITORING_MODE;
-       else 
-           currentMode = SILENT_MODE;    
+       lastDebounce = millis();       
+       currentMode = (currentMode == SILENT_MODE)?MONITORING_MODE:SILENT_MODE; 
+       printMode(currentMode);
      }
   }
 }
 
 // Обробка режимів роботи
-
 void handleMode() {
-     unsigned long now = millis();
+     
     
      switch(currentMode){ 
         case SILENT_MODE:
@@ -106,76 +144,76 @@ void handleMode() {
 
         case MONITORING_MODE:
           {
-           
-            if ((now - lastSensorsRead) > SENSORS_COLLECTION_INTERVAL) {        
-                 lastSensorsRead = now;                                    
-                 uint8_t status = validateSensorsAndWiFi();
-                 printTimeStamp(now);                
-                 if(status == STATUS_OK) {
-                     readLDR();
-                     readDHT();
+            unsigned long now = millis();
+            if ((now - lastSensorsMonitor) > SENSORS_MON_INTERVAL) {        
+                 lastSensorsMonitor = now;                                                     
+                 printTimeStamp(now);                   
+                 uint8_t status = validateSensors();    // Перевіряємо статус       
+                 if(status == STATUS_OK) {                  
                      printLDR(&ldrpayload);
                      printDHTT(&dhttpayload);
                  }    
-                 else
-                 {
-                     printSensorStatus(status);
-                     printWiFiStatus(status);
-                 }  
+                 else                 
+                     printSensorStatus(status);                              
             }
             break;
           }
         default:
-            // Якщо режим невідомий, встановлюємо його в SILENT_MODE            
+          {
+            // Якщо режим невідомий, встановлюємо його в SILENT_MODE  
+            currentMode = SILENT_MODE;          
             break;
+          }  
     
     } 
              
 }
-
-
 // Перевірка таймерів та відправка даних на сервер
-void checkAndPost() {
+void  postData() {
 
  unsigned long now = millis();
-    if ((now - lastSensorsPost) > SENSORS_COLLECTION_INTERVAL) {
-        lastSensorsPost            = now;            
-        uint8_t status = validateSensorsAndWiFi();
+    if ((now - lastSensorsPost) > HTTP_POST_INTERVAL) {
         
-        if(status == STATUS_OK) {
-          readLDR();
-          readDHT();
-          sensorpayload.dhtt         = dhttpayload;
-          sensorpayload.ldr          = ldrpayload;
-          sensorpayload.timestamp    = millis();
-          sensorpayload.statuscheck  = status;        
-          Serial.println("[SENSOR] Дані зібрані — готові до відправки");
-          printSensorData(&sensorpayload);  
-          sendData(dhttpayload.temperature, dhttpayload.humidity, ldrpayload.lux);                      
-        } else{
-           Serial.println("[SENSOR] Помилка валідації сенсорів або WiFi — дані не будуть відправлені"); 
-           printSensorStatus(status);
-           printWiFiStatus(status);          
+        lastSensorsPost = now;                   
+        uint8_t status = validateWiFi();   
+        if(status == STATUS_OK)
+        {
+                      
+         status = validateSensors();
+
+         if(status == STATUS_OK) {         
+           sensorpayload.dhtt         = dhttpayload;
+           sensorpayload.ldr          = ldrpayload;
+           sensorpayload.timestamp    = millis();
+           sensorpayload.statuscheck  = status;        
+           Serial.println("[SENSOR] Дані зібрані — готові до відправки");
+           printSensorData(&sensorpayload);  
+           sendData(dhttpayload.temperature, dhttpayload.humidity, ldrpayload.lux);                      
+          } else{
+            Serial.println("[SENSOR] Помилка валідації сенсорів — дані не будуть відправлені"); 
+            printSensorStatus(status);          
+          } 
+        } else {
+            Serial.println("[WiFi] Помилка WiFi — дані не будуть відправлені"); 
+            printWiFiStatus(status);
         }
+        
     }  
 }
-   
-   
-
-
-
-
+ 
 // ═══════════════════════════════════════════════════════════
 // SETUP
 // ═══════════════════════════════════════════════════════════
-void setup() {
+void setup() {         
     Serial.begin(115200);
+    connectWifi();
     delay(500);
-    pinMode(EXT_LED_PIN, OUTPUT);
+    pinMode(EXT_LED_PIN, OUTPUT);   
     pinMode(BUTTON_PIN,  INPUT_PULLUP);
     pinMode(LDR_PIN,     INPUT);
     dht.begin();
-    attachInterrupt(BUTTON_PIN, onButtonPress, FALLING);
+    currentMode = SILENT_MODE;
+    attachInterrupt(BUTTON_PIN, onButtonPress, RISING);  
     Serial.println("ESP32 старт");
 }
 
@@ -185,8 +223,9 @@ void setup() {
 void loop() {
     // Все в одному loop() — це один FreeRTOS Task
     // xTaskCreate() для окремих задач — поза межами курсу
+    readSensorsAndCheckLDR();
     checkMode();
     handleMode();
-    checkAndPost();        
+    postData(); 
 }
     

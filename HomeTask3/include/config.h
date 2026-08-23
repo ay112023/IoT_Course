@@ -9,10 +9,11 @@
 // ═══════════════════════════════════════════════════════════
 // ПОРОГОВІ ЗНАЧЕННЯ
 // ═══════════════════════════════════════════════════════════
-#define HIGH_TEMPERATURE_THRESHOLD  -40
-#define LOW_TEMPERATURE_THRESHOLD    80
-#define HIGH_HUMIDITY_THRESHOLD       0
-#define LOW_HUMIDITY_THRESHOLD      100
+#define HIGH_TEMPERATURE_THRESHOLD    80
+#define LOW_TEMPERATURE_THRESHOLD    -40
+#define HIGH_HUMIDITY_THRESHOLD      100
+#define LOW_HUMIDITY_THRESHOLD         0
+#define LOW_LDR_THRESHOLD            200
 //═══════════════════════════════════════════════════════════
 // РЕЖИИМИ РОБОТИ
 // ═══════════════════════════════════════════════════════════
@@ -23,7 +24,8 @@
 // ═══════════════════════════════════════════════════════════
 #define LDR_INTERVAL                    20000   // мс
 #define DHTT_INTERVAL                   10000   // мс
-#define SENSORS_COLLECTION_INTERVAL     5000   // мс
+#define SENSORS_INTERVAL                5000   // мс
+#define SENSORS_MON_INTERVAL            5000   // мс
 #define HTTP_POST_INTERVAL              30000  // мс
 // ═══════════════════════════════════════════════════════════
 // СТАТУС ПРИСТРОЮ
