@@ -174,18 +174,15 @@ void handleMode() {
     } 
              
 }
-// Перевірка таймерів та відправка даних на сервер
+// Перевірка таймерів, сенсорів, та відправка даних на сервер
 void  postData() {
 
  unsigned long now = millis();
     if ((now - lastSensorsPost) > HTTP_POST_INTERVAL) {
         
         lastSensorsPost = now;                   
-        uint8_t status = validateWiFi();   
-        if(status == STATUS_OK)
-        {
-                      
-         status = validateSensors();
+        uint8_t status = validateWiFi(); 
+        status |= validateSensors();  
 
          if(status == STATUS_OK) {         
            sensorpayload.dhtt         = dhttpayload;
@@ -195,15 +192,21 @@ void  postData() {
            Serial.println("[SENSOR] Дані зібрані — готові до відправки");
            printSensorData(&sensorpayload);  
            sendData(dhttpayload.temperature, dhttpayload.humidity, ldrpayload.lux);                      
-          } else{
-            Serial.println("[SENSOR] Помилка валідації сенсорів — дані не будуть відправлені"); 
-            printSensorStatus(status);          
           } 
-        } else {
-            Serial.println("[WiFi] Помилка WiFi — дані не будуть відправлені"); 
-            printWiFiStatus(status);
-        }
-        
+          else 
+          {
+            if(status & STATUS_WIFI_ERR)  // Обробка помилки Wi-Fi
+             {
+               Serial.println("[WiFi] Помилка WiFi — дані не будуть відправлені"); 
+               printWiFiStatus(status);
+             }
+
+            if((status & STATUS_LDR_ERR) || (status & STATUS_DHT_ERR) ) // Обробка помилок сенсорів
+             {
+                Serial.println("[SENSOR] Помилка валідації сенсорів — дані не будуть відправлені"); 
+               printSensorStatus(status);          
+             } 
+         }                             
     }  
 }
  
