@@ -150,8 +150,17 @@ void handleMode() {
                      printLDR(&ldrpayload);
                      printDHTT(&dhttpayload);
                  }    
-                 else                 
-                     printSensorStatus(status);                              
+                 else 
+                   {   
+                    // Обробка помилок сенсорів             
+                    if ((status & STATUS_DHT_ERR) && !(status & STATUS_LDR_ERR) )  
+                       printLDR(&ldrpayload);
+
+                    if (!(status & STATUS_DHT_ERR) && (status & STATUS_LDR_ERR) ) 
+                       printDHTT(&dhttpayload);
+                    
+                    printSensorStatus(status);                              
+                   }  
             }
             break;
           }
