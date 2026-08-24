@@ -22,9 +22,8 @@
 // ═══════════════════════════════════════════════════════════
 // ТАЙМЕРИ
 // ═══════════════════════════════════════════════════════════
-//#define LDR_INTERVAL                    20000   // мс
-//#define DHTT_INTERVAL                   10000   // мс
-#define SENSORS_INTERVAL                5000   // мс
+#define LDR_INTERVAL                    5000   // мс
+#define DHTT_INTERVAL                   5000   // мс
 #define SENSORS_MON_INTERVAL            5000   // мс
 #define HTTP_POST_INTERVAL              30000  // мс
 // ═══════════════════════════════════════════════════════════

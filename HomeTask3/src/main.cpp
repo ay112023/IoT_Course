@@ -4,9 +4,8 @@
 #include "wifi1.h"
 #include "httpr.h"
 
-//unsigned long lastSensorReadLDR    = 0;
-//unsigned long lastSensorReadDHTT   = 0;
-unsigned long lastSensorsRead = 0;
+unsigned long lastSensorReadLDR    = 0;
+unsigned long lastSensorReadDHTT   = 0;
 unsigned long lastSensorsMonitor = 0;
 unsigned long lastSensorsPost = 0;
 
@@ -16,8 +15,6 @@ DHT        dht(DHTT_PIN, DHTT_TYPE);
 SensorData sensorpayload;
 LDRData    ldrpayload;
 DHTTData   dhttpayload;
-
-
 
 
 // ── Глобальні змінні ──────────────────────────────────
@@ -67,27 +64,30 @@ void checkLDR()
 }
 
 //  Читання сенсорів
-void readLDR(){
-    ldrpayload.raw    = analogRead(LDR_PIN);
-    ldrpayload.lux    = adcToLux(ldrpayload.raw);       
+bool readLDR(){
+  unsigned long now = millis();
+     if ((now - lastSensorReadLDR) > LDR_INTERVAL) { 
+       lastSensorReadLDR = now;
+       ldrpayload.raw    = analogRead(LDR_PIN);
+       ldrpayload.lux    = adcToLux(ldrpayload.raw);
+       return true;
+     } 
+  return false;
 }
 
-void readDHT()
+bool readDHT()
 {
-    dhttpayload.humidity    = dht.readHumidity();
-    dhttpayload.temperature = dht.readTemperature();       
+   unsigned long now = millis();
+    if ((now - lastSensorReadDHTT) > DHTT_INTERVAL) { 
+      dhttpayload.humidity    = dht.readHumidity();
+      dhttpayload.temperature = dht.readTemperature();       
+      return true;
+    }
+  return false;  
 }
 
 
-void readSensorsAndCheckLDR(){
-     unsigned long now = millis();
-     if ((now - lastSensorsRead) > SENSORS_INTERVAL) {        
-        lastSensorsRead = now;                                                                       
-        readLDR();
-        readDHT();  
-        checkLDR();
-     }                  
-}
+
 
 // Вивід у Serial відліку часу
 void printTimeStamp(unsigned long timestamp) {
@@ -106,8 +106,8 @@ void printMode(uint8_t mode)
        } 
        case MONITORING_MODE:
         {
-            Serial.println("---Monitoring mode activated---");
-            break;
+          Serial.println("---Monitoring mode activated---");
+          break;
         }
      }    
 }
@@ -232,7 +232,8 @@ void setup() {
 void loop() {
     // Все в одному loop() — це один FreeRTOS Task
     // xTaskCreate() для окремих задач — поза межами курсу
-    readSensorsAndCheckLDR();
+    if(readLDR()) checkLDR();
+    readDHT();
     checkMode();
     handleMode();
     postData(); 
