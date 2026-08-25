@@ -4,8 +4,8 @@
 #include "wifi1.h"
 #include "httpr.h"
 
-unsigned long lastSensorReadLDR    = 0;
-unsigned long lastSensorReadDHTT   = 0;
+// unsigned long lastSensorReadLDR    = 0;
+//unsigned long lastSensorReadDHTT   = 0;
 unsigned long lastSensorsMonitor = 0;
 unsigned long lastSensorsPost = 0;
 
