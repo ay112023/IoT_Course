@@ -98,8 +98,8 @@ bool readLDR(LDRData* ldrpayload ){
 }
 
 bool readDHT(DHTTData* dhttpayload, DHT* dht)
-{
-      if(dhttpayload == nullptr || dht == nullptr) 
+{  
+    if(dhttpayload == nullptr || dht == nullptr) 
         return false;
 
       dhttpayload->humidity    = dht->readHumidity();

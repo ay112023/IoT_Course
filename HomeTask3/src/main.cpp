@@ -84,12 +84,22 @@ void handleButtonAndSwitchMode()
 
   lastButtonState = reading;
 } 
+
+bool due(unsigned long& last, unsigned long interval)
+{
+     unsigned long now = millis();
+     if ((now - last) > interval)
+      {
+        last = now;
+        return true;
+      }  
+  return false;    
+} 
+
 void doMonitoring()  
 {
-    unsigned long now = millis();
-   if ((now - lastSensorsMonitor) > SENSORS_MON_INTERVAL) {        
-      lastSensorsMonitor = now;                                                     
-      printTimeStamp(now);      
+   if (due(lastSensorsMonitor, SENSORS_MON_INTERVAL)) {                                                           
+      printTimeStamp(millis());      
       readDHT(&dhttpayload,&dht);
       readLDR(&ldrpayload);
       checkLDR();             
@@ -114,10 +124,7 @@ void doMonitoring()
 // Перевірка таймерів, сенсорів, та відправка даних на сервер
 void  postData() {
 
- unsigned long now = millis();
-    if ((now - lastSensorsPost) > HTTP_POST_INTERVAL) {
-        
-        lastSensorsPost = now;                   
+    if (due(lastSensorsPost, HTTP_POST_INTERVAL)) {
         uint8_t status = validateWiFi(); 
         status |= validateSensors(&dhttpayload,&ldrpayload);  
 
