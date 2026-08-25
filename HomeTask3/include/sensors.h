@@ -37,8 +37,9 @@ void printSensorStatus(uint8_t status);
 void printSensorData(SensorData* sensorpayload);
 void printLDR(LDRData* ldrpayload);
 void printDHTT(DHTTData* dhttpayload);
-
-
+uint8_t validateSensors(DHTTData* dhttpayload, LDRData* ldrpayload);
+bool readLDR(LDRData* ldrpayload );
+bool readDHT(DHTTData* dhttpayload, DHT* dht);
 
 
 

@@ -7,3 +7,4 @@
 bool isWifiConnected();
 void printWiFiStatus(uint8_t status);
 bool connectWifi();
+uint8_t validateWiFi();

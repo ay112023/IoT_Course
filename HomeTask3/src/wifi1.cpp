@@ -33,5 +33,11 @@ void printWiFiStatus(uint8_t status) {
        Serial.println("  Wi-Fi: Connected");  
 }
 
-
+uint8_t validateWiFi()
+{
+   uint8_t status = STATUS_OK;
+   if (!isWifiConnected()) 
+     status |= STATUS_WIFI_ERR;
+  return status;
+}
 
