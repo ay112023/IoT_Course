@@ -141,7 +141,7 @@ void tryReconnect()
              Serial.print("[MQTT] З'єднання втрачено — перепідключаємось... Спроба № ");            
              Serial.print(reconnectAttempts);
              Serial.println();
-             connectMQTT();            
+             if(connectMQTT())reconnectAttempts = 0; //Якщо коннект є - скидаємо лічильник           
            }           
         }
         else if(reconnectAttempts == RECONNECT_ATTEMPTS)
@@ -173,9 +173,10 @@ void setup() {
 // LOOP
 // ═══════════════════════════════════════════════════════════
 void loop() {
-    if (mqttClient.connected()) {
+    if (mqttClient.connected()) {                 
+
         // ⚠️ ОБОВ'ЯЗКОВО — без цього callback не викликається
-        // і брокер не отримує PING → відключає клієнта
+        // і брокер не отримує PING → відключає клієнта       
         mqttClient.loop();
 
         if(manTriggerReceived)
@@ -185,9 +186,7 @@ void loop() {
             manTriggerReceived = false; 
         }
 
-    } else {
-        // millis() таймер між спробами reconnect
-        // Не штурмуємо брокер — чекаємо RECONNECT_INTERVAL мс    
+    } else {        
          tryReconnect();
     }
 }

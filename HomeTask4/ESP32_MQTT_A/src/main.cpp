@@ -81,7 +81,7 @@ void publishSensors()
 }
 
 // Прототип фунції
-void publishCommands();
+void publishCommand(const char* command, size_t size);
 
 void handleButton()
 {
@@ -95,7 +95,7 @@ void handleButton()
     if (reading != buttonState) {
       buttonState = reading;
       if (buttonState == LOW) {
-            publishCommands();
+            publishCommand("manual_read",12);
       }
     }
   }
@@ -147,16 +147,16 @@ void publishSensorsData(float temperature, float humidity, float lux) {
 }
 
 // Публікація команд
-void publishCommands(){
+void publishCommand(const char* command, size_t size){
   if (!mqttClient.connected()) {
         Serial.println("[MQTT] Не підключено — пропускаємо");
         return;
     }
     // snprintf замість String — безпечно для heap (Заняття 4)
     // char буфер фіксованого розміру, ніякої фрагментації
-    char payload[20];
+    char payload[size];
     snprintf(payload, sizeof(payload),
-        "manual_read");
+         command);
     Serial.print("[MQTT] Публікуємо: ");
     Serial.println(payload);
 
@@ -175,8 +175,9 @@ void tryReconnect()
              reconnectAttempts++;                         
              Serial.print("[MQTT] З'єднання втрачено — перепідключаємось... Спроба № ");            
              Serial.print(reconnectAttempts);
-             Serial.println();
-             connectMQTT();            
+             Serial.println();             
+             if(connectMQTT())reconnectAttempts = 0; //Якщо коннект є - скидаємо лічильник
+                               
            }           
         }
         else if(reconnectAttempts == RECONNECT_ATTEMPTS)
