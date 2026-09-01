@@ -13,7 +13,7 @@ void sendData(float temperature, float humidity, float lux) {
     http.begin(SERVER_URL);
     http.addHeader("Content-Type", "application/json");  
 
-    // TODO ДЗ: замінити хардкодені дані на реальні з сенсорів   
+     
    char payload[128];
    snprintf(payload, sizeof(payload),"{\"temperature\":%.1f,\"humidity\":%.1f,\"lux\":%.1f}",
                                                                    temperature, humidity, lux);
