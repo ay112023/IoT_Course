@@ -9,13 +9,13 @@
 // ═══════════════════════════════════════════════════════════
 // ПОРОГОВІ ЗНАЧЕННЯ
 // ═══════════════════════════════════════════════════════════
-#define HIGH_TEMPERATURE_THRESHOLD    80
-#define LOW_TEMPERATURE_THRESHOLD    -40
+#define HIGH_TEMPERATURE_THRESHOLD    26
+#define LOW_TEMPERATURE_THRESHOLD     20
 #define HIGH_HUMIDITY_THRESHOLD      100
 #define LOW_HUMIDITY_THRESHOLD         0
 #define LOW_LDR_THRESHOLD            200
 //═══════════════════════════════════════════════════════════
-// РЕЖИИМИ РОБОТИ
+// РЕЖИМИ РОБОТИ
 // ═══════════════════════════════════════════════════════════
 #define SILENT_MODE      0x10  
 #define MONITORING_MODE  0x12
@@ -26,6 +26,7 @@
 #define DHTT_INTERVAL                   5000   // мс
 #define SENSORS_MON_INTERVAL            5000   // мс
 #define HTTP_POST_INTERVAL              30000  // мс
+#define LED_STATE_INTERVAL                500
 // ═══════════════════════════════════════════════════════════
 // СТАТУС ПРИСТРОЮ
 // ═══════════════════════════════════════════════════════════
@@ -37,13 +38,11 @@
 // ═══════════════════════════════════════════════════════════
 // КОНФІГУРАЦІЯ WI-FI
 // ═══════════════════════════════════════════════════════════
-#define WIFI_SSID     "Wokwi-GUEST"
-#define WIFI_PASSWORD ""
-//#define WIFI_SSID     "Keenetic-3379"
+//#define WIFI_SSID     "Wokwi-GUEST"
 //#define WIFI_PASSWORD ""
-
+#define WIFI_SSID     "Keenetic-3379"
+#define WIFI_PASSWORD "Ej7WKjis"
 #define WIFI_TIMEOUT  10000  // мс
-
 // ═══════════════════════════════════════════════════════════
 // КОНФІГУРАЦІЯ HTTP
 // ═══════════════════════════════════════════════════════════
@@ -58,3 +57,8 @@
 #define TOPIC_COMMANDS "iot-course/yakymovich/commands"  // топік на який підписуємось
 #define RECONNECT_INTERVAL 5000  // мс
 #define RECONNECT_ATTEMPTS 3
+#define MESSAGE_BUFFER_SIZE 128  // розмір буфера для публікації повідомлень
+// ═══════════════════════════════════════════════════════════
+// Число блимань LED при надходженні команд 
+// ═══════════════════════════════════════════════════════════
+#define LED_BLINKS_MANUAL_READ 3

@@ -37,11 +37,9 @@
 // ═══════════════════════════════════════════════════════════
 // КОНФІГУРАЦІЯ WI-FI
 // ═══════════════════════════════════════════════════════════
- #define WIFI_SSID     "Wokwi-GUEST"
- #define WIFI_PASSWORD ""
-
+#define WIFI_SSID     "Wokwi-GUEST"
+#define WIFI_PASSWORD ""
 #define WIFI_TIMEOUT  10000  // мс
-
 // ═══════════════════════════════════════════════════════════
 // КОНФІГУРАЦІЯ HTTP
 // ═══════════════════════════════════════════════════════════
@@ -54,7 +52,11 @@
 #define MQTT_CLIENT_ID "esp32-demo-a"             // унікальний — не як у ESP32-B!
 #define TOPIC_SENSORS  "iot-course/yakymovich/sensors"    // топік для публікації сенсорів
 #define TOPIC_COMMANDS "iot-course/yakymovich/commands"  //       для публікації команд
-
 #define RECONNECT_INTERVAL 5000  // мс
 #define RECONNECT_ATTEMPTS 3
 #define PUBLISH_INTERVAL 10000  // публікуємо раз на 10 секунд
+#define MESSAGE_BUFFER_SIZE 128  // розмір буфера для публікації повідомлень
+// ═══════════════════════════════════════════════════════════
+// КОМАНДИ
+// ═══════════════════════════════════════════════════════════
+#define COMMAND_MANUAL_READ  "manual_read"  // команда для кнопки

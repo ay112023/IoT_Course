@@ -1,5 +1,5 @@
 #include "wifi1.h"
-
+WiFiClient  wifiClient;
 
 bool connectWifi() {
     Serial.print("[Wi-Fi] Підключаємось");
@@ -26,7 +26,7 @@ bool isWifiConnected() {
 }
 
 void printWiFiStatus(uint8_t status) {
-     Serial.print("Status WiFi :0x");
+    Serial.print("Status WiFi :0x");
     Serial.println(status, HEX);
     if (status & STATUS_WIFI_ERR)     
        Serial.print("  Wi-Fi: немає з'єднання");

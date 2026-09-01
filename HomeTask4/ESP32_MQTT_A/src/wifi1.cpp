@@ -1,5 +1,6 @@
 #include "wifi1.h"
 
+WiFiClient  wifiClient;
 
 bool connectWifi() {
     Serial.print("[Wi-Fi] Підключаємось");

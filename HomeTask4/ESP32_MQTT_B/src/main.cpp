@@ -1,28 +1,17 @@
 #include <Arduino.h>
-#include <PubSubClient.h>
-#include "wifi1.h"
+#include "mqtt.h"
 
 // Таймер reconnect — чекаємо 5 секунд між спробами
 // щоб не штурмувати брокер при нестабільному з'єднанні
 unsigned long lastReconnectAttempt = 0;
 uint8_t reconnectAttempts= 0;
+unsigned long lastLedStateChange = 0;
+int ledStateChangesCount = 0;
 
-
-// ═══════════════════════════════════════════════════════════
-// MQTT КЛІЄНТ
-// ═══════════════════════════════════════════════════════════
-// WiFiClient — TCP з'єднання
-// PubSubClient — MQTT протокол поверх TCP
-WiFiClient   wifiClient;
-PubSubClient mqttClient(wifiClient);
 
 volatile bool manTriggerReceived = false;
 
-// ═══════════════════════════════════════════════════════════
-// CALLBACK — викликається автоматично при вхідному повідомленні
-// Викликається всередині mqttClient.loop()
-// Не використовувати delay() і publish() всередині
-// ═══════════════════════════════════════════════════════════
+
 bool due(unsigned long& last, unsigned long interval)
 {
      unsigned long now = millis();
@@ -33,7 +22,11 @@ bool due(unsigned long& last, unsigned long interval)
       }  
   return false;    
 } 
-
+// ═══════════════════════════════════════════════════════════
+// CALLBACK — викликається автоматично при вхідному повідомленні
+// Викликається всередині mqttClient.loop()
+// Не використовувати delay() і publish() всередині
+// ═══════════════════════════════════════════════════════════
 void onMessage(char* topic, byte* payload, unsigned int length) {
     // payload — масив байтів без термінатора '\0'
     // треба самостійно перетворити в C-рядок
@@ -61,12 +54,18 @@ void onMessage(char* topic, byte* payload, unsigned int length) {
 
       // Керуємо LED на основі температури
       // Замінити пороги 26.0 і 20.0 на власні значення
-      if (temperature > 26.0) {
+      if (temperature > HIGH_TEMPERATURE_THRESHOLD) {
          digitalWrite(EXT_LED_PIN, HIGH);
-         Serial.println("[LED] ON — вище 26°C");
-      } else if (temperature < 20.0) {
+         Serial.print("[LED] ON — вище");
+         Serial.print(HIGH_TEMPERATURE_THRESHOLD);
+         Serial.println("°C");
+
+      } else if (temperature < LOW_TEMPERATURE_THRESHOLD) {
          digitalWrite(EXT_LED_PIN, LOW);
-         Serial.println("[LED] OFF — нижче 20°C");
+         Serial.print("[LED] OFF — нижче ");
+         Serial.print(LOW_TEMPERATURE_THRESHOLD);
+         Serial.println("°C");
+
       } else {
          Serial.println("[LED] Без змін — температура в нормі");
       } 
@@ -88,47 +87,24 @@ void onMessage(char* topic, byte* payload, unsigned int length) {
     }
   }
 
-
-void doLedBlinks(uint8_t times)
+// Зміна стану LED з неблокуючим таймером
+bool changeLedState(uint8_t times)
 {
-    uint8_t state = digitalRead(EXT_LED_PIN);
-
-    for(int i = 0 ;i < times * 2; i++)
-    {
-      state = (state == HIGH)?LOW:HIGH;
-      digitalWrite(EXT_LED_PIN, state);
-      delay(200); 
-    }
-}
-// ═══════════════════════════════════════════════════════════
-// MQTT
-// ═══════════════════════════════════════════════════════════
-bool connectMQTT() {
-    Serial.print("[MQTT] Підключаємось до ");
-    Serial.print(MQTT_BROKER);
-    Serial.print("...");
-
-    if (mqttClient.connect(MQTT_CLIENT_ID)) {
-        Serial.println(" OK");
-
-        // Підписуємось всередині connectMQTT — не в setup()
-        // Бо Clean Session = true скидає підписки при кожному відключенні
-        // Так підписка автоматично відновлюється після reconnect
-        mqttClient.subscribe(TOPIC_SENSORS);
-        Serial.print("[MQTT] Підписались на: ");
-        Serial.println(TOPIC_SENSORS);
-
-        mqttClient.subscribe(TOPIC_COMMANDS);
-        Serial.print("[MQTT] Підписались на: ");
-        Serial.println(TOPIC_COMMANDS);
-        return true;
-    }
-
-    // mqttClient.state() повертає код помилки:
-    // -4 = таймаут, -2 = сервер не знайдено, 5 = відмовлено в доступі
-    Serial.print(" помилка: ");
-    Serial.println(mqttClient.state());
-    return false;
+      if(due(lastLedStateChange, LED_STATE_INTERVAL))
+      { 
+        if(ledStateChangesCount < times) 
+        {
+           uint8_t state;
+           state = digitalRead(EXT_LED_PIN);
+           state = (state == HIGH) ? LOW : HIGH;  
+           digitalWrite(EXT_LED_PIN, state);     
+           ledStateChangesCount++;    
+        } else {
+           ledStateChangesCount = 0;  // Скидаємо лічильник після завершення блимання      
+           return true;
+        }            
+       }
+   return false;      
 }
 
 void tryReconnect()
@@ -141,7 +117,7 @@ void tryReconnect()
              Serial.print("[MQTT] З'єднання втрачено — перепідключаємось... Спроба № ");            
              Serial.print(reconnectAttempts);
              Serial.println();
-             if(connectMQTT())reconnectAttempts = 0; //Якщо коннект є - скидаємо лічильник           
+             if(connectMQTTandSubscribe())reconnectAttempts = 0; //Якщо коннект є - скидаємо лічильник           
            }           
         }
         else if(reconnectAttempts == RECONNECT_ATTEMPTS)
@@ -160,13 +136,12 @@ void setup() {
     pinMode(EXT_LED_PIN, OUTPUT);
     digitalWrite(EXT_LED_PIN, LOW);  // LED вимкнено при старті
     Serial.println("ESP32-B старт");
-
     connectWifi();
     mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
     mqttClient.setCallback(onMessage);  // реєструємо callback до підключення
     mqttClient.setKeepAlive(60);        // PING кожні 60 секунд
     mqttClient.setSocketTimeout(30);    // таймаут TCP сокету 30 секунд
-    connectMQTT();
+    connectMQTTandSubscribe();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -181,9 +156,14 @@ void loop() {
 
         if(manTriggerReceived)
         {
-            Serial.println("Manual trigger received.");
-            doLedBlinks(3);
-            manTriggerReceived = false; 
+           if(ledStateChangesCount == 0){ 
+               Serial.println("Manual trigger received.");           
+           }                       
+           
+           // Неблокуюче блимання LED 
+           if(changeLedState(LED_BLINKS_MANUAL_READ * 2)){ 
+              manTriggerReceived = false; 
+          } 
         }
 
     } else {        
