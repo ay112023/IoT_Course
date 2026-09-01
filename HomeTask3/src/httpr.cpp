@@ -17,18 +17,16 @@ void sendData(float temperature, float humidity, float lux) {
    char payload[128];
    snprintf(payload, sizeof(payload),"{\"temperature\":%.1f,\"humidity\":%.1f,\"lux\":%.1f}",
                                                                    temperature, humidity, lux);
+    
+    Serial.print("[HTTP] Відправляємо: ");                                                                       
+    int code = http.POST((uint8_t *)payload, strlen(payload));                         
+    Serial.println(payload);   
 
-    int code = http.POST((uint8_t *)payload, strlen(payload));                     
-    Serial.print("[HTTP] Відправляємо: ");
-    Serial.println(payload);
-
-    int httpCode = http.POST(payload);
-
-    if (httpCode == 200) {
+    if (code == 200) {
         Serial.println("[HTTP] OK — сервер отримав дані");
     } else {
         Serial.print("[HTTP] Помилка: ");
-        Serial.println(httpCode);
+        Serial.println(code);
     }
     Serial.println("---------------------");
     http.end();
