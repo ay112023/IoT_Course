@@ -42,7 +42,7 @@ void onMessage(char* topic, byte* payload, unsigned int length) {
     // Простий парсинг JSON через strstr + atof
     // Без бібліотеки ArduinoJson — достатньо для відомої структури payload
 
-   if(strstr(topic, "sensors") != NULL) 
+   if(strstr(topic, TOPIC_SENSORS) != NULL) 
    {
     char* tempPtr = strstr(message, "\"temperature\":");
     if (tempPtr != NULL) {           
@@ -73,13 +73,11 @@ void onMessage(char* topic, byte* payload, unsigned int length) {
          Serial.println("[MQTT] Температура не знайдена");  
       
         return;
-
     }  
     
-    if(strstr(topic, "commands") != NULL)
-    {
-         char* commandPtr = strstr(message, "manual_read"); 
-         if(commandPtr != NULL)
+    if(strstr(topic, TOPIC_COMMANDS) != NULL)
+    {        
+         if(strstr(message, COMMAND_MANUAL_READ) != NULL)
          {            
              manTriggerReceived = true;            
          }else
