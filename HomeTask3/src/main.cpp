@@ -97,12 +97,15 @@ bool due(unsigned long& last, unsigned long interval)
   return false;    
 } 
 
-void doMonioringLuxInSlilentMode()
-{
-     if (due(lastLuxMonitorSilent, SENSORS_MON_INTERVAL)) {
-         readLDR(&ldrpayload);
-         checkLDR();          
+
+void doPreliminaryLuxControl()  //Якщо моніторінг не включено - усе одне контролюємо освітленість і керуємо LED 
+{ 
+   if(currentMode != MONITORING_MODE) {
+     if (due(lastLuxMonitorSilent, SENSORS_MON_INTERVAL)) {                   
+          readLDR(&ldrpayload);
+          checkLDR();          
      }
+   } 
 }
 
 void doMonitoring()  
@@ -173,11 +176,11 @@ void  postData() {
 }
 // Обробка режимів роботи
 void handleMode() {
-         
+    
+    doPreliminaryLuxControl();
+
      switch(currentMode){ 
-        case SILENT_MODE:
-            // У режимі моніторимо тільки освітленність та якщо треба вмикаємо/вимикаємо LED
-            doMonioringLuxInSlilentMode();
+        case SILENT_MODE:                  
             break;
 
         case MONITORING_MODE:
