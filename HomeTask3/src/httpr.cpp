@@ -11,13 +11,14 @@ void sendData(float temperature, float humidity, float lux) {
 
     HTTPClient http;
     http.begin(SERVER_URL);
-    http.addHeader("Content-Type", "application/json");
+    http.addHeader("Content-Type", "application/json");  
 
-    // TODO ДЗ: замінити хардкодені дані на реальні з сенсорів
-    String payload = "{\"temperature\":" + String(temperature, 1) +
-                     ",\"humidity\":"    + String(humidity, 1)    +
-                     ",\"lux\":"         + String(lux, 1)         + "}";
+    // TODO ДЗ: замінити хардкодені дані на реальні з сенсорів   
+   char payload[128];
+   snprintf(payload, sizeof(payload),"{\"temperature\":%.1f,\"humidity\":%.1f,\"lux\":%.1f}",
+                                                                   temperature, humidity, lux);
 
+    int code = http.POST((uint8_t *)payload, strlen(payload));                     
     Serial.print("[HTTP] Відправляємо: ");
     Serial.println(payload);
 

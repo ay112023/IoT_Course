@@ -8,6 +8,7 @@
 //unsigned long lastSensorReadDHTT   = 0;
 unsigned long lastSensorsMonitor = 0;
 unsigned long lastSensorsPost = 0;
+unsigned long lastLuxMonitorSilent = 0;
 
 
 // ── Глобальні екземпляри ──────────────────────────────────
@@ -96,6 +97,14 @@ bool due(unsigned long& last, unsigned long interval)
   return false;    
 } 
 
+void doMonioringLuxInSlilentMode()
+{
+     if (due(lastLuxMonitorSilent, SENSORS_MON_INTERVAL)) {
+         readLDR(&ldrpayload);
+         checkLDR();          
+     }
+}
+
 void doMonitoring()  
 {
    if (due(lastSensorsMonitor, SENSORS_MON_INTERVAL)) {                                                           
@@ -121,6 +130,8 @@ void doMonitoring()
        }            
       }                               
 }
+
+
 // Перевірка таймерів, сенсорів, та відправка даних на сервер
 void  postData() {
 
@@ -158,7 +169,8 @@ void handleMode() {
          
      switch(currentMode){ 
         case SILENT_MODE:
-            // У режимі SILENT_MODE нічого не виводимо
+            // У режимі моніторимо тільки освітленність та якщо треба вмикаємо/вимикаємо LED
+            doMonioringLuxInSlilentMode();
             break;
 
         case MONITORING_MODE:
