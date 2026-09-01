@@ -38,10 +38,10 @@
 // ═══════════════════════════════════════════════════════════
 // КОНФІГУРАЦІЯ WI-FI
 // ═══════════════════════════════════════════════════════════
-//#define WIFI_SSID     "Wokwi-GUEST"
+#define WIFI_SSID     "Wokwi-GUEST"
+#define WIFI_PASSWORD ""
+//#define WIFI_SSID     "Keenetic-3379"
 //#define WIFI_PASSWORD ""
-#define WIFI_SSID     "Keenetic-3379"
-#define WIFI_PASSWORD "Ej7WKjis"
 #define WIFI_TIMEOUT  10000  // мс
 // ═══════════════════════════════════════════════════════════
 // КОНФІГУРАЦІЯ HTTP
