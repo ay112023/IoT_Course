@@ -83,6 +83,10 @@ void publishSensors()
 // Прототип фунції
 void publishCommand(const char* command, size_t size);
 
+// Переривання для кнопки
+// не використовую, бо, як показала практика, воно працює 
+// тільки для швидквих коротких натискань кнопки
+// а якщо натискання довге - брязкіт, коли відпускаємо кнопку, все одно не пропадає...
 void handleButton()
 {
   bool reading = digitalRead(BUTTON_PIN);
@@ -95,7 +99,7 @@ void handleButton()
     if (reading != buttonState) {
       buttonState = reading;
       if (buttonState == LOW) {
-            publishCommand("manual_read",12);
+            publishCommand("manual_read",128);
       }
     }
   }
@@ -133,7 +137,7 @@ void publishSensorsData(float temperature, float humidity, float lux) {
 
     // snprintf замість String — безпечно для heap (Заняття 4)
     // char буфер фіксованого розміру, ніякої фрагментації
-    char payload[100];
+    char payload[128];
     snprintf(payload, sizeof(payload),
         "{\"temperature\":%.1f,\"humidity\":%.1f,\"lux\":%1.f}",
         temperature, humidity, lux);
