@@ -30,6 +30,7 @@ struct SensorData {
     LDRData       ldr;
     unsigned long timestamp;
     uint8_t       statuscheck;
+    bool    alreadyReaded;
 };
 
 float adcToLux(int adcValue);

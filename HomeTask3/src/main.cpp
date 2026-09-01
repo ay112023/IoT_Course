@@ -116,6 +116,7 @@ void doMonitoring()
       if(status == STATUS_OK) {                                       
           printLDR(&ldrpayload);
           printDHTT(&dhttpayload);
+          sensorpayload.alreadyReaded = true;
       }    
       else 
       {   
@@ -126,7 +127,7 @@ void doMonitoring()
         if (!(status & STATUS_DHT_ERR) && (status & STATUS_LDR_ERR) ) 
           printDHTT(&dhttpayload);
                     
-          printSensorStatus(status);                              
+          printSensorStatus(status);                                       
        }            
       }                               
 }
@@ -136,6 +137,12 @@ void doMonitoring()
 void  postData() {
 
     if (due(lastSensorsPost, HTTP_POST_INTERVAL)) {
+
+        if(!sensorpayload.alreadyReaded){
+            Serial.println("[SENSOR] : Сенсори не було прочитано - дані не будуть відправлені.");     
+            return;
+        }
+
         uint8_t status = validateWiFi(); 
         status |= validateSensors(&dhttpayload,&ldrpayload);  
 
@@ -202,6 +209,7 @@ void setup() {
     pinMode(BUTTON_PIN,  INPUT_PULLUP);
     pinMode(LDR_PIN,     INPUT);
     dht.begin();        
+    sensorpayload.alreadyReaded = false;
     Serial.println("ESP32 старт");
     printMode(currentMode);
 }
