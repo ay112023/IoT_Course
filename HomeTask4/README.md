@@ -27,7 +27,7 @@ Upd:
      /Lib/Include/
                   mqtt.h
                   sesnors.h
-                  wifw1.h
+                  wifi1.h
      /Lib/src/
               mqtt.cpp
               sensors.cpp
