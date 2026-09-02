@@ -76,7 +76,13 @@ void publishSensorsData(float temperature, float humidity, float lux) {
 
 // Публікація команд
 void publishCommand(const char* command, size_t size){
-  if (!mqttClient.connected()) {
+    
+   if(size <= 0 || size > MESSAGE_BUFFER_SIZE) {
+        Serial.println("[MQTT] Помилка: розмір буфера для команди некоректний");
+        return;
+    }
+     
+    if (!mqttClient.connected()) {
         Serial.println("[MQTT] Не підключено — пропускаємо");
         return;
     }
