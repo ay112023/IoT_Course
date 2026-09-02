@@ -28,12 +28,12 @@ Upd:
                   mqtt.h
                   sesnors.h
                   wifw1.h
-         /src/
+     /Lib/src/
               mqtt.cpp
               sensors.cpp
               wifi1.cpp
 
-    Це в мене це поки що не вийшло: лінкер не знаходив <WiFi.h> та "DHT.h"...
+    Це в мене поки що не вийшло: лінкер не знаходив <WiFi.h> та "DHT.h"...
                      
    
 # Лекція 8 — Практичне застосування MQTT
