@@ -59,7 +59,7 @@ void handleButton()
     if (reading != buttonState) {
       buttonState = reading;
       if (buttonState == LOW) {
-            publishCommand(COMMAND_MANUAL_READ,MESSAGE_BUFFER_SIZE);
+            publishCommand(COMMAND_MANUAL_READ);
       }
     }
   }

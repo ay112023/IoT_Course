@@ -75,7 +75,9 @@ void publishSensorsData(float temperature, float humidity, float lux) {
 }
 
 // Публікація команд
-void publishCommand(const char* command, size_t size){
+// size = MESSAGE_BUFFER_SIZE за замовчуванням, але можна передати менший розмір
+// А раптом для команди достатньо меншого розміру буфера, ніж для сенсорних даних?
+void publishCommand(const char* command, size_t size ){
     
    if(size <= 0 || size > MESSAGE_BUFFER_SIZE) {
         Serial.println("[MQTT] Помилка: розмір буфера для команди некоректний");

@@ -12,4 +12,4 @@ extern PubSubClient mqttClient;
 bool connectMQTT();
 bool connectMQTTandSubscribe();
 void publishSensorsData(float temperature, float humidity, float lux);
-void publishCommand(const char* command, size_t size);
+void publishCommand(const char* command, size_t size = MESSAGE_BUFFER_SIZE);
