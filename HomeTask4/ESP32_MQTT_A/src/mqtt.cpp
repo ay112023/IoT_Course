@@ -22,6 +22,36 @@ bool connectMQTT() {
     return false;
 }
 
+// 
+// Коннект до MQTT з підпискою на топіки
+//
+bool connectMQTTandSubscribe(uint8_t qos) {
+    Serial.print("[MQTT] Підключаємось до ");
+    Serial.print(MQTT_BROKER);
+    Serial.print("...");
+
+    if (mqttClient.connect(MQTT_CLIENT_ID)) {
+        Serial.println(" OK");
+
+        // Підписуємось всередині connectMQTT — не в setup()
+        // Бо Clean Session = true скидає підписки при кожному відключенні
+        // Так підписка автоматично відновлюється після reconnect
+        mqttClient.subscribe(TOPIC_SENSORS, qos);
+        Serial.print("[MQTT] Підписались на: ");
+        Serial.println(TOPIC_SENSORS);
+
+        mqttClient.subscribe(TOPIC_COMMANDS, qos);
+        Serial.print("[MQTT] Підписались на: ");
+        Serial.println(TOPIC_COMMANDS);
+        return true;
+    }
+    // mqttClient.state() повертає код помилки:
+    // -4 = таймаут, -2 = сервер не знайдено, 5 = відмовлено в доступі
+    Serial.print(" помилка: ");
+    Serial.println(mqttClient.state());
+    return false;
+}
+
 // ═══════════════════════════════════════════════════════════
 // ПУБЛІКАЦІЯ ДАНИХ
 // ═══════════════════════════════════════════════════════════

@@ -115,7 +115,9 @@ void tryReconnect()
              Serial.print("[MQTT] З'єднання втрачено — перепідключаємось... Спроба № ");            
              Serial.print(reconnectAttempts);
              Serial.println();
-             if(connectMQTTandSubscribe())reconnectAttempts = 0; //Якщо коннект є - скидаємо лічильник           
+              // Підписуємось на топіки з QoS 1
+              //Якщо коннект є - скидаємо лічильник
+             if(connectMQTTandSubscribe(1))reconnectAttempts = 0;            
            }           
         }
         else if(reconnectAttempts == RECONNECT_ATTEMPTS)
@@ -139,7 +141,7 @@ void setup() {
     mqttClient.setCallback(onMessage);  // реєструємо callback до підключення
     mqttClient.setKeepAlive(60);        // PING кожні 60 секунд
     mqttClient.setSocketTimeout(30);    // таймаут TCP сокету 30 секунд
-    connectMQTTandSubscribe();
+    connectMQTTandSubscribe(1); // Підписуємось на топіки з QoS 1
 }
 
 // ═══════════════════════════════════════════════════════════

@@ -10,6 +10,6 @@
 extern PubSubClient mqttClient;
 
 bool connectMQTT();
-bool connectMQTTandSubscribe();
+bool connectMQTTandSubscribe(uint8_t qos);
 void publishSensorsData(float temperature, float humidity, float lux);
 void publishCommand(const char* command, size_t size = MESSAGE_BUFFER_SIZE);
