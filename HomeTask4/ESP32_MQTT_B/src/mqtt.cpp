@@ -34,13 +34,10 @@ bool connectMQTTandSubscribe(uint8_t qos)  {
         // Підписуємось всередині connectMQTT — не в setup()
         // Бо Clean Session = true скидає підписки при кожному відключенні
         // Так підписка автоматично відновлюється після reconnect
-        mqttClient.subscribe(TOPIC_SENSORS, qos);
+        mqttClient.subscribe(TOPICS_ALL, qos);
         Serial.print("[MQTT] Підписались на: ");
-        Serial.println(TOPIC_SENSORS);
-
-        mqttClient.subscribe(TOPIC_COMMANDS, qos);
-        Serial.print("[MQTT] Підписались на: ");
-        Serial.println(TOPIC_COMMANDS);
+        Serial.println(TOPICS_ALL);
+       
         return true;
     }
 

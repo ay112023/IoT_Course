@@ -10,9 +10,8 @@ Upd:
         iot-course/yakymovich/commands 
                
 
-  ESP32-B Підписується но топіки
-        iot-course/yakymovich/sensors
-        iot-course/yakymovich/commands
+  ESP32-B Підписується на топіки
+        iot-course/yakymovich/#
         із QoS = 1,  повідомлення обробляються callback-функцією onMessage
         із повідомлення береться тільки температура,функція керує світлодіодом, 
         змінюючи його стан у залежності від температури.
