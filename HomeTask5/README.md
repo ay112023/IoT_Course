@@ -30,24 +30,24 @@
          - rule_iot_telemetry_alert із IAM-role iot_telemetry_alert
            для додавання логів у CloulWatch, якщо температура > 28 С.
 
-Зроблено скріншоти:
-   1 - Налаштування Thing
-   2 - Налаштування сертифікату із policy         
-   3 - Permissions для  policy my_policy1
-   4 - Rules, що створені
-   5 - Налаштування rule_iot_telemetry
-   6 - Налаштування rule_iot_telemetry
-   7 - Налаштування rule_iot_telemetry_alert
-   8 - IAM Role iot_telemetry_add
-   9 - Permissions IAM Role iot_telemetry_add
-  10 - Permissions IAM Role iot_telemetry_error_action
-  11 - IAM Role iot_telemetry_alert
-  12 - Permissions IAM Role iot_telemetry_alert
-  14 - Робота у WOKWI, публікація топіків
-  15 - Таблиця iot_telemetry
-  16 - Log groups
-  17 - Log streams iot_telemetry_alert
-  18 - Log events  iot_telemetry_alert
+      Зроблено скріншоти:
+        1 - Налаштування Thing
+        2 - Налаштування сертифікату із policy         
+        3 - Permissions для  policy my_policy1
+        4 - Rules, що створені
+        5 - Налаштування rule_iot_telemetry
+        6 - Налаштування rule_iot_telemetry
+        7 - Налаштування rule_iot_telemetry_alert
+        8 - IAM Role iot_telemetry_add
+        9 - Permissions IAM Role iot_telemetry_add
+       10 - Permissions IAM Role iot_telemetry_error_action
+       11 - IAM Role iot_telemetry_alert
+       12 - Permissions IAM Role iot_telemetry_alert
+       14 - Робота у WOKWI, публікація топіків
+       15 - Таблиця iot_telemetry
+       16 - Log groups
+       17 - Log streams iot_telemetry_alert
+       18 - Log events  iot_telemetry_alert
    
 
 
