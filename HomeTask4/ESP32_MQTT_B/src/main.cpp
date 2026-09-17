@@ -79,7 +79,8 @@ void onMessage(char* topic, byte* payload, unsigned int length) {
     {        
          if(strstr(message, COMMAND_MANUAL_READ) != NULL)
          {            
-             manTriggerReceived = true;            
+             manTriggerReceived = true;                 
+             Serial.println("Manual trigger received.");                  
          }else
              Serial.println("[MQTT] Команда не знайдена");                        
     }
@@ -90,6 +91,11 @@ bool changeLedState(uint8_t times)
 {
       if(due(lastLedStateChange, LED_STATE_INTERVAL))
       { 
+        if(ledStateChangesCount == 0)
+        {
+           digitalWrite(EXT_LED_PIN, LOW);  
+        }
+        
         if(ledStateChangesCount < times) 
         {
            uint8_t state;
@@ -135,7 +141,8 @@ void setup() {
     delay(500);
     pinMode(EXT_LED_PIN, OUTPUT);
     digitalWrite(EXT_LED_PIN, LOW);  // LED вимкнено при старті
-    Serial.println("ESP32-B старт");
+    Serial.print(MQTT_CLIENT_ID);
+    Serial.println(" старт");
     connectWifi();
     mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
     mqttClient.setCallback(onMessage);  // реєструємо callback до підключення
@@ -155,11 +162,7 @@ void loop() {
         mqttClient.loop();
 
         if(manTriggerReceived)
-        {
-           if(ledStateChangesCount == 0){ 
-               Serial.println("Manual trigger received.");           
-           }                       
-           
+        {                                           
            // Неблокуюче блимання LED 
            if(changeLedState(LED_BLINKS_MANUAL_READ * 2)){ 
               manTriggerReceived = false; 

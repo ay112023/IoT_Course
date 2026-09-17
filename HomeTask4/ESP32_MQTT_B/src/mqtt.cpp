@@ -88,7 +88,7 @@ void publishCommand(const char* command, size_t size ){
     // snprintf замість String — безпечно для heap (Заняття 4)
     // char буфер фіксованого розміру, ніякої фрагментації
     char payload[size];
-    snprintf(payload, sizeof(payload),
+    snprintf(payload, sizeof(payload),"%s",
          command);
     Serial.print("[MQTT] Публікуємо: ");
     Serial.println(payload);

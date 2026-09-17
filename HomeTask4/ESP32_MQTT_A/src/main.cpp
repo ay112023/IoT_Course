@@ -89,7 +89,7 @@ void publishSensors()
           printDHTT(&dhttpayload);
                     
           printSensorStatus(status);                              
-       }            
+       }        
       }                               
 }
 
@@ -118,9 +118,11 @@ void tryReconnect()
 // ═══════════════════════════════════════════════════════════
 void setup() {
     Serial.begin(115200);
+    pinMode(BUTTON_PIN, INPUT_PULLUP);
+    dht.begin();
     delay(500);
-    Serial.println("ESP32-A старт");
-
+    Serial.print(MQTT_CLIENT_ID);
+    Serial.println(" старт");
     connectWifi();
     mqttClient.setServer(MQTT_BROKER, MQTT_PORT);
     mqttClient.setKeepAlive(60);        // PING кожні 60 секунд

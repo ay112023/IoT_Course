@@ -47,9 +47,9 @@
 // ═══════════════════════════════════════════════════════════
 // КОНФІГУРАЦІЯ MQTT
 // ═══════════════════════════════════════════════════════════
-#define MQTT_BROKER    "broker.hivemq.com"       // публічний брокер HiveMQ
+#define MQTT_BROKER    "broker.hivemq.com"        // публічний брокер HiveMQ
 #define MQTT_PORT      1883                       // plain TCP, без TLS
-#define MQTT_CLIENT_ID "esp32-demo-a"             // унікальний — не як у ESP32-B!
+#define MQTT_CLIENT_ID "esp32-yakymovich-a"       // унікальний ID 
 #define TOPICS_ALL     "iot-course/yakymovich/#"  //Усі топіки
 #define TOPIC_SENSORS  "iot-course/yakymovich/sensors"    // топік для публікації сенсорів
 #define TOPIC_COMMANDS "iot-course/yakymovich/commands"  //       для публікації команд
