@@ -1,7 +1,50 @@
-# Upd По виконанню завдання:
+# ДЗ № 5: MQTT over TLS до AWS IoT Core (ESP32)
+
+Демонстрація захищеного підключення ESP32 до **AWS IoT Core** через MQTT over TLS (порт 8883) із взаємною автентифікацією за сертифікатами (mTLS). Неблокуючий таймер на `millis()` публікує телеметрію кожні 30 секунд; автоматичний reconnect відновлює з'єднання без `delay()` (Arduino Framework, PlatformIO + Wokwi).
+
+
+# Архітектура
   
-   HARDWARE:
-     
+┌──────────────┐
+│  ESP32       │  Wokwi
+│  (DHT22 sim) │
+└──────┬───────┘
+       │ MQTT over TLS, порт 8883
+       │ топік: iot-course/yakymovich/telemetry
+       │ payload: {"temperature","humidity","lux","device_id","timestamp"}
+       ▼
+┌───────────────────────────────────────────────────────────────────────────┐
+│  AWS IoT Core (eu-north-1) Thingname:esp32_yakymovich, policy:my_policy1  | 
+│  ┌────────────────────────────────┐   ┌──────────────────────────────┐    │  
+│  │  Rules Engine                  │   | Rules Engine                 │    |
+│  │  rule_iot_telemetry            │   | rule_iot_telemetry_alert     |    │
+│  │  SELECT * + timestamp()        │   |  SELECT * ...                |    │
+│  │           + clientid()         │   |   where temperature > 28     |    │
+│  │           + topic(2)           │   |                              |    │
+│  └────────────┬───────────────────┘   └────────┬─────────────────────┘    |
+└───────────────┼────────────────────────────────┼──────────────────────────┘
+                │  Action dynamoDBv2             | Action CloudWatch Logs                  
+                │  IAM-роль:                     |  IAM-роль: iot_telemetry_alert
+                |     iot_telemetry_add,         |
+                |  Error Action CloudWatch Logs  |    
+                |  IAM-роль:                     | 
+                |     iot_telemetry_error_action |
+                ▼                                ▼
+        ┌───────────────────┐           ┌───────────────────┐  
+        │  DynamoDB         │           |                   |
+        │  iot_telemetry    │           |  CloudWatch Logs  | 
+        |                   |           |                   |
+        │  pk: device_id    │           └───────────────────┘ 
+        │  sk: received_at  │
+        |  --------------   | 
+        |  CloudWatch Logs  |  
+        └───────────────────┘
+                
+                
+
+## Пояснення до архітектури
+
+   EDGE:     
       Сенсори опитуються із інтервалом у 30 секунд
       із-за чого KeepAlive нв MQTT клієнті було встановлено у 100 секунд бо
       при значенні = 60 коннект із AWS відвалювався та постійно відбувався реконнект.
@@ -15,7 +58,7 @@
          використовється переривання. :)
 
 
-     У AWS:
+     AWS:
        Cтворено Thing esp32_yakymovich що обмежується
        політикою  my_policy1.
       
@@ -30,42 +73,42 @@
          - rule_iot_telemetry_alert із IAM-role iot_telemetry_alert
            для додавання логів у CloulWatch, якщо температура > 28 С.
 
-      Зроблено скріншоти:
-        1 - Налаштування Thing
-        2 - Налаштування сертифікату із policy         
-        3 - Permissions для  policy my_policy1
-        4 - Rules, що створені
-        5 - Налаштування rule_iot_telemetry
-        6 - Налаштування rule_iot_telemetry
-        7 - Налаштування rule_iot_telemetry_alert
-        8 - IAM Role iot_telemetry_add
-        9 - Permissions IAM Role iot_telemetry_add
-       10 - Permissions IAM Role iot_telemetry_error_action
-       11 - IAM Role iot_telemetry_alert
-       12 - Permissions IAM Role iot_telemetry_alert
-       14 - Робота у WOKWI, публікація топіків
-       15 - Таблиця iot_telemetry
-       16 - Log groups
-       17 - Log streams iot_telemetry_alert
-       18 - Log events  iot_telemetry_alert
-   
-
-
-# Лекція 10 — MQTT over TLS до AWS IoT Core (ESP32)
-
-Демонстрація захищеного підключення ESP32 до **AWS IoT Core** через MQTT over TLS (порт 8883) із взаємною автентифікацією за сертифікатами (mTLS). Неблокуючий таймер на `millis()` публікує телеметрію кожні 10 секунд; автоматичний reconnect відновлює з'єднання без `delay()` (Arduino Framework, PlatformIO + Wokwi).
-
-Розвиток Заняття 8: логіка MQTT ідентична, змінюється лише транспорт — `WiFiClient` → `WiFiClientSecure`, брокер HiveMQ → AWS IoT Core, порт 1883 → 8883.
-
----
 
 ## Структура проєкту
 
 ```
-src/
-├── main.cpp           — основний файл прошивки
+include/
+├── config.h           — основний файл конфігурації
 ├── secrets.h          — Wi-Fi, endpoint і сертифікати (У .gitignore!)
 └── secrets.example.h  — шаблон secrets.h для копіювання
+    mqtt.h             - header бібліотеки для роботи із MQTT
+    ntp.h              - header бібліотеки для роботи із NTP
+    sensors.h          - header бібліотеки для роботи із сенсорами
+    wifi1.h            - header бібліотеки для роботи із сенсорами 
+src/
+├── main.cpp             — основний файл прошивки
+    mqtt.cpp             - бібліотека для роботи із MQTT
+    ntp.cpp              - бібліотека для роботи із NTP
+    sensors.cpp          - бібліотека для роботи із сенсорами
+    wifi1.cpp            - бібліотека для роботи із сенсорами 
+screeenshots/            - скріншоти, що демнострують роботу:
+ ├──    1.jpg - Налаштування Thing
+        2.jpg - Налаштування сертифікату із policy         
+        3.jpg - Permissions для  policy my_policy1
+        4.jpg - Rules, що створені
+        5.jpg - Налаштування rule_iot_telemetry
+        6.jpg - Налаштування rule_iot_telemetry
+        7.jpg - Налаштування rule_iot_telemetry_alert
+        8.jpg - IAM Role iot_telemetry_add
+        9.jpg - Permissions IAM Role iot_telemetry_add
+       10.jpg - Permissions IAM Role iot_telemetry_error_action
+       11.jpg - IAM Role iot_telemetry_alert
+       12.jpg - Permissions IAM Role iot_telemetry_alert
+       14.jpg - Робота у WOKWI, публікація топіків
+       15.jpg - Таблиця iot_telemetry
+       16.jpg - Log groups
+       17.jpg - Log streams iot_telemetry_alert
+       18.jpg - Log events  iot_telemetry_alert
 diagram.json           — схема підключення для Wokwi-симулятора
 wokwi.toml             — конфігурація Wokwi
 platformio.ini         — конфігурація PlatformIO
@@ -88,7 +131,6 @@ platformio.ini         — конфігурація PlatformIO
 > **Client ID має дорівнювати `THINGNAME`** — AWS Policy обмежує Connect саме по ньому (слайд 16).
 
 ---
-
 ## Залежності
 
 ```ini
@@ -189,25 +231,9 @@ ESP32-A (AWS IoT Core edition) старт
 2. Відкрити проєкт у VS Code з розширенням **PlatformIO**.
 3. Для симуляції — розширення **Wokwi for VS Code**, `F1 → Wokwi: Start Simulator`.
 4. Відкрити **Serial Monitor** (швидкість `115200`).
-5. Кожні 10 с у Serial — рядок `[MQTT] Публікуємо: ...` з підтвердженням.
+5. Кожні 30 с у Serial — рядок `[MQTT] Публікуємо: ...` з підтвердженням.
 
----
 
-## Рекомендована література
-
-| Ресурс | Посилання |
-|---|---|
-| AWS IoT Core — Developer Guide | [docs.aws.amazon.com/iot](https://docs.aws.amazon.com/iot/latest/developerguide/what-is-aws-iot.html) |
-| AWS IoT — device certificates (mTLS) | [docs.aws.amazon.com/iot/…/x509-client-certs](https://docs.aws.amazon.com/iot/latest/developerguide/x509-client-certs.html) |
-| PubSubClient — офіційна документація | [pubsubclient.knolleary.net](https://pubsubclient.knolleary.net) |
-| WiFiClientSecure (ESP32 Arduino core) | [github.com/espressif/arduino-esp32/…/WiFiClientSecure](https://github.com/espressif/arduino-esp32/tree/master/libraries/WiFiClientSecure) |
-| Wokwi — ESP32 Wi-Fi у симуляторі | [docs.wokwi.com/guides/esp32-wifi](https://docs.wokwi.com/guides/esp32-wifi) |
-| Random Nerd Tutorials — ESP32 + AWS IoT | [randomnerdtutorials.com/esp32-aws-iot-core](https://randomnerdtutorials.com/esp32-aws-iot-core-mqtt-arduino/) |
-
-### Додаткові матеріали
-
--  **AWS — Using Device Time to Validate AWS IoT Server Certificates** — [aws.amazon.com/blogs/iot/using-device-time-to-validate-aws-iot-server-certificates](https://aws.amazon.com/blogs/iot/using-device-time-to-validate-aws-iot-server-certificates/)
--  **AWS — Server authentication** (офіційна документація) — [docs.aws.amazon.com/iot/latest/developerguide/server-authentication.html](https://docs.aws.amazon.com/iot/latest/developerguide/server-authentication.html)
--  **AWS — Security best practices in AWS IoT Core** — [docs.aws.amazon.com/iot/latest/developerguide/security-best-practices.html](https://docs.aws.amazon.com/iot/latest/developerguide/security-best-practices.html)
--  **PubSubClient (knolleary)** — та сама бібліотека з Заняття 8 — [github.com/knolleary/pubsubclient](https://github.com/knolleary/pubsubclient)
--  **WiFiClientSecure** — довідник ESP32 Arduino Core — [docs.espressif.com](https://docs.espressif.com) (пошук: WiFiClientSecure ESP32)
+      Зроблено скріншоти:
+       
+   
