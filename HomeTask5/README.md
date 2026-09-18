@@ -3,7 +3,7 @@
 Демонстрація захищеного підключення ESP32 до **AWS IoT Core** через MQTT over TLS (порт 8883) із взаємною автентифікацією за сертифікатами (mTLS). Неблокуючий таймер на `millis()` публікує телеметрію кожні 30 секунд; автоматичний reconnect відновлює з'єднання без `delay()` (Arduino Framework, PlatformIO + Wokwi).
 
 
-# Архітектура
+## Архітектура
   
 ┌──────────────┐
 │  ESP32       │  Wokwi
@@ -14,7 +14,7 @@
        │ payload: {"temperature","humidity","lux","device_id","timestamp"}
        ▼
 ┌───────────────────────────────────────────────────────────────────────────┐
-│  AWS IoT Core (eu-north-1) Thingname:esp32_yakymovich, policy:my_policy1  | 
+│  AWS IoT Core (eu-north-1)                                                | 
 │  ┌────────────────────────────────┐   ┌──────────────────────────────┐    │  
 │  │  Rules Engine                  │   | Rules Engine                 │    |
 │  │  rule_iot_telemetry            │   | rule_iot_telemetry_alert     |    │
@@ -59,8 +59,8 @@
 
 
      AWS:
-       Cтворено Thing esp32_yakymovich що обмежується
-       політикою  my_policy1.
+       Cтворено Thing що обмежується
+       політикою.
       
        Створена таблиця DynamoDBv2: 
              iot_telemetry
@@ -84,7 +84,7 @@ include/
     mqtt.h             - header бібліотеки для роботи із MQTT
     ntp.h              - header бібліотеки для роботи із NTP
     sensors.h          - header бібліотеки для роботи із сенсорами
-    wifi1.h            - header бібліотеки для роботи із сенсорами 
+    wifi1.h            - header бібліотеки для роботи із WiFi 
 src/
 ├── main.cpp             — основний файл прошивки
     mqtt.cpp             - бібліотека для роботи із MQTT
@@ -145,95 +145,33 @@ lib_deps =
 
 ## Опис main.cpp
 
-### 1. Wi-Fi — `connectWifi()`
+### 1 Контроль неблокуючих таймерів  `bool due(unsigned long& last, unsigned long interval)`
+       Викликається для контролю інтервалів часу
 
-Без змін із Заняття 8. Канал 6 (`WiFi.begin(..., 6)`) пропускає сканування — економить ~4 секунди в Wokwi. Повертає `false` при таймауті `WIFI_TIMEOUT`.
+### 2 Переривання для кнопки `void IRAM_ATTR onButtonPress()`
+       Використовується для обробки натискання кнопки для аваріного перезавантаження пристрою
+       при критичних помилках
 
-### 2. NTP-синхронізація часу — `syncTime()` (НОВЕ, слайд 18)
+### 3 Блокуюче блимання LED `void blLEDBlink(uint8_t times)`
+      Використовується для індикації критичних помилок, що виникли
 
-```cpp
-configTime(0, 0, "pool.ntp.org");  // зсув 0, DST 0 — для TLS достатньо
-```
+### 3  Коннект з AWS IoT Core `boolean connectAWS()`
+      З'єднання зі хмарою (Конyект із WiFi, синхронізація часу по NTP, встановлення сертифікатів та ключів)
 
-**Без цього TLS впаде**, навіть із правильними сертифікатами: ESP32 стартує з 1970 року, і handshake вважає сертифікат AWS «ще не дійсним» (1970 < дата видачі). Час треба синхронізувати **до** `connect()`.
+### 4  Вивід у Serial відміток часу `void printTimeStamp(unsigned long timestamp) `
 
-### 3. Підключення до AWS — `connectAWS()`
+### 5  Публікація сенсорів `void publishSensors()` 
 
-Порядок кроків критичний:
+### 6  Неблокуючий реконнект `void  tryReconnect()`
 
-```cpp
-connectWifi();                          // 1. Wi-Fi
-syncTime();                             // 2. час (до сертифікатів!)
-net.setCACert(AWS_CERT_CA);             // 3. три файли зі слайда 10
-net.setCertificate(AWS_CERT_CRT);
-net.setPrivateKey(AWS_CERT_PRIVATE);
-mqttClient.setServer(AWS_IOT_ENDPOINT, 8883);
-mqttClient.setBufferSize(512);          // 256 замало — мовчки обрізає JSON
-```
-
-`WiFiClientSecure net` замість `WiFiClient` — єдина зміна на рівні транспорту (слайд 17). `PubSubClient` той самий, що й у Занятті 8.
-
-### 4. MQTT Connect — `connectMQTT()`
-
-```cpp
-mqttClient.connect(THINGNAME);  // Client ID = THINGNAME (слайд 16)
-```
-
-Коди `mqttClient.state()` при невдачі:
-- `-2` — помилка TLS/handshake → перевір **час** і **endpoint**
-- `5` — відмовлено в доступі → перевір **AWS Policy**
-
-### 5. Публікація — `publishData(temperature, humidity)`
-
-Без змін із Заняття 8. `snprintf()` замість Arduino `String` — уникаємо фрагментації heap (Заняття 4). Топік: `iot-course/demo/telemetry`.
-
-```json
-{"temperature":24.5,"humidity":55.0}
-```
-
-### 6. Неблокуючий таймер і reconnect
-
-`mqttClient.loop()` викликається лише коли підключено — без нього брокер не отримує PING і відключає клієнта. Reconnect — раз на 5 секунд без `delay()`.
-
----
-
-## Вивід у Serial
-
-```
-ESP32-A (AWS IoT Core edition) старт
-[Wi-Fi] Підключаємось.... OK
-[Wi-Fi] IP: 10.13.37.2
-[NTP] Синхронізація часу.. OK
-[MQTT] Підключаємось до AWS IoT Core... OK
-[MQTT] Публікуємо: {"temperature":27.0,"humidity":55.0}
-[MQTT] OK
-```
-
-При помилці:
-
-```
-[MQTT] Підключаємось до AWS IoT Core... помилка: -2
-```
-
----
-
-## Моніторинг через AWS IoT Console
-
-1. AWS IoT Console → **MQTT test client**.
-2. **Subscribe to a topic** → `iot-course/demo/telemetry` (або `iot-course/demo/#`).
-3. Запустити симуляцію в Wokwi — повідомлення з'являться у списку.
-
----
-
-## Як запустити
-
-1. Скопіювати `secrets.example.h` → `secrets.h` і заповнити (див. вище).
-2. Відкрити проєкт у VS Code з розширенням **PlatformIO**.
-3. Для симуляції — розширення **Wokwi for VS Code**, `F1 → Wokwi: Start Simulator`.
-4. Відкрити **Serial Monitor** (швидкість `115200`).
-5. Кожні 30 с у Serial — рядок `[MQTT] Публікуємо: ...` з підтвердженням.
-
-
-      Зроблено скріншоти:
-       
-   
+### 7  Обробка помилок `uint8_t isErrorsHandled()`
+      Блокуюче блимання LED-ом:
+          - Не піднявся WiFi                        - 2 рази
+          - За 3 спроби не синхронізувався час      - 3 рази
+          - За 3 спроби не пройшов реконнект MQTT   - 4 рази
+### 8   loop()
+     
+      Перевіряємо чи є критичні помилки та
+      якщо вони є - LED блимає, по
+      натисканню кнопки можемо перезавантажити пристрій.
+      Якщо помилок нема - штатна работа пристрою.
