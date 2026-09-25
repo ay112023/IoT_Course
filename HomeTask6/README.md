@@ -19,7 +19,7 @@ README з деталями.
 ## Архітектура
 
 ```
-         ↓ КОМАНДИ (вниз)                              ↑ ТЕЛЕМЕТРІЯ (вгору)
+         ↓ КОМАНДИ (вниз)                              ↑ ТЕЛЕМЕТРІЯ та ПОДІЇ (вгору)
 
 ┌─────────────────┐                            ┌─────────────────┐
 │     Браузер     │  HTML/index.html           │    Браузер      │
@@ -28,19 +28,18 @@ README з деталями.
 └────────┬────────┘                            └────────▲────────┘
          │ POST /actuators/led  {"value":"on"}          │ ← GET /sensors/latest
          │ HTTP + CORS          {"value":"off"}         │ ← GET /sensors/history
-         ▼                                              │ ← GET /events 
-┌─────────────────────────────────────────────────────────────────────────────────────────── ┐
+         │                                              │ ← GET /events 
+┌────────▼──────────────────────────────────────────────┴────────────────────────────────────┐
 │  FastAPI  :8000                                                                            │  
 │  main.py · iot_client.py · db.py                                                           │  
 └────────┬────────────────────────────▲─────────────────────────────────────▲────────────────┘
          │ boto3 iot-data             │ boto3 query :                       │ boto3 query :
-         │ publish  QoS 1             │ IAM user: iam_user1                 │ IAM user: iam_user1
-		 │ topic:                     │ POLICY: iot_telemetry_read          │ POLICY: iot_events_read
+         │ publish  QoS 1             │ IAM user: iam_user1                 │ IAM user  : iam_user1
+		 │ topic:                     │ IAM policy: iot_telemetry_read      │ IAM policy: iot_events_read
          │ iot-course/yakymovich/     │                                     │    
          │ commands/led               │                                     │ 
          │ IAM user: iam_user1        │                                     │ 
-         │ POLICY:                    │                                     │ 
-		 │  iam_publish_command       │                                     │
+         │ IAM:iam_publish_command    │                                     │
          │                            │                                     │
          │                   ┌────────┴────────┐                   ┌────────┴────────┐
          │                   │ AWS DynamoDB    │                   │ AWS DynamoDB    │
@@ -64,7 +63,7 @@ README з деталями.
    │                                     MQTT Broker                                          │
    │                                                                                          │
    │                                                                                          │
-   └───────────────────────────────▲─────────────────────────────────────▲────────────────────┘
+   └─────┬─────────────────────────▲─────────────────────────────────────▲────────────────────┘
          │ Subscribe               │                                     │
          │ topic:                  │                                     │   
          │ iot-course/yakymovich/  │                                     │   
@@ -73,14 +72,14 @@ README з деталями.
          │ MQTT over TLS :8883     │ topic:  iot-course/yakymovcih/      │ topic:  iot-course/yakymovcih/ 
 		 │                         │         telemetry                   │          events 
          │                         │ MQTT over TLS :8883                 │ MQTT over TLS :8883
-┌────────▼──────────────────────────────────┐                            │
+┌────────▼─────────────────────────┴────────┐                            │
 │  ESP32 (Wokwi)                            │────────────────────────────┘
 │  subscribe → LED D2   publish → 10 сек    │
 └───────────────────────────────────────────┘
 ```
 
 **Два незалежні канали в одному брокері.** «Вгору» — пристрій публікує
-телеметрію, Rules Engine кладе її в DynamoDB, бекенд читає таблицю. «Вниз» —
+телеметрію та події, Rules Engine кладе її в DynamoDB, бекенд читає таблицю. «Вниз» —
 бекенд публікує команду в топік, пристрій її забирає. Спільного коду в цих
 каналів немає — тільки спільний брокер.
 
@@ -132,7 +131,7 @@ README з деталями.
 		   iot_telemetry_read;
 		   iam_publish_command
      	 
-     Rule Engine Rules:
+     Rules Engine Rules:
 	     RULE: rule_iot_telemetry
 		    SQL statement: 
 		     SELECT  clientid() as client_id, 
