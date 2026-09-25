@@ -1,17 +1,17 @@
-# Лекція 14 — Двостороння комунікація: від кнопки в браузері до світлодіода
+# Домашнє завдання №6
 
-До цього заняття дані рухались тільки в один бік: пристрій → хмара → бекенд.
-Тепер замикаємо коло. Кнопка в браузері вмикає світлодіод на ESP32 — через
-FastAPI і AWS IoT Core, без жодного прямого з'єднання між браузером і
-пристроєм.
+
+Демонстрація зібрки повного IoT-стеку: від пристрою до інтерфейсу керування та побудування API поверх хмарних даних, 
+візуалізація потоків в реальному часі та замикання  петлі — відправки команди назад на пристрій через той самий стек
+
 
 Три теки — три ланки одного ланцюга. Кожна запускається окремо, кожна має свій
 README з деталями.
 
 | Тека | Роль | Технології |
 |---|---|---|
-| [`HTML/`](HTML/) | інтерфейс: дві кнопки | статичний HTML + `fetch` |
-| [`FastAPI/`](FastAPI/) | бекенд: читає телеметрію, публікує команди | Python, FastAPI, boto3 |
+| [`HTML/`](HTML/) | Frontend -інтерфейс: дві кнопки | статичний HTML + `fetch` |
+| [`Backend/`](FastAPI/) | бекенд: читає телеметрію, публікує команди | Python, FastAPI, boto3 |
 | [`ESP32/`](ESP32/) | пристрій: публікує телеметрію, слухає команди | C++, PlatformIO, Wokwi |
 
 ---
@@ -19,36 +19,64 @@ README з деталями.
 ## Архітектура
 
 ```
-                        ↓ КОМАНДИ (вниз)                ↑ ТЕЛЕМЕТРІЯ (вгору)
+         ↓ КОМАНДИ (вниз)                              ↑ ТЕЛЕМЕТРІЯ (вгору)
 
-┌─────────────────┐
-│  Браузер        │  HTML/index.html
-│  [Увімкнути]    │
-└────────┬────────┘
-         │ POST /actuators/led  {"value":"on"}
-         │ HTTP + CORS
-         ▼
-┌─────────────────────────────────────────┐
-│  FastAPI  :8000                         │  ← GET /sensors/latest
-│  main.py · iot_client.py · db.py        │  ← GET /sensors/history
-└────────┬───────────────────────▲────────┘
-         │ boto3 iot-data        │ boto3 query
-         │ publish  QoS 1        │
-         ▼                       │
-┌─────────────────┐     ┌────────┴────────┐
-│  AWS IoT Core   │     │  DynamoDB       │
-│                 │     │  iot_telemetry  │
-└────────┬────────┘     └────────▲────────┘
-         │                       │
-         │ topic:                │ Rules Engine
-         │ .../commands/led      │ (Заняття 11)
-         │                       │
-         │ MQTT over TLS :8883   │ topic: .../telemetry
-         ▼                       │
-┌─────────────────────────────────┴───────┐
-│  ESP32 (Wokwi)                          │
-│  subscribe → LED D2   publish → 10 сек  │
-└─────────────────────────────────────────┘
+┌─────────────────┐                            ┌─────────────────┐
+│     Браузер     │  HTML/index.html           │    Браузер      │
+│  [Увімк./Вимк.] |                            │   [Grafana]     │
+|                 |                            │ [Відображення]  │
+└────────┬────────┘                            └────────▲────────┘
+         │ POST /actuators/led  {"value":"on"}          │ ← GET /sensors/latest
+         │ HTTP + CORS          {"value":"off"}         │ ← GET /sensors/history
+         ▼                                              │ ← GET /events 
+┌─────────────────────────────────────────────────────────────────────────────────────────── ┐
+│  FastAPI  :8000                                                                            │  
+│  main.py · iot_client.py · db.py                                                           │  
+└────────┬────────────────────────────▲─────────────────────────────────────▲────────────────┘
+         │ boto3 iot-data             │ boto3 query :                       │ boto3 query :
+         │ publish  QoS 1             │ IAM user: iam_user1                 │ IAM user: iam_user1
+		 │ topic:                     │ POLICY: iot_telemetry_read          │ POLICY: iot_events_read
+         │ iot-course/yakymovich/     │                                     │    
+         │ commands/led               │                                     │ 
+         │ IAM user: iam_user1        │                                     │ 
+         │ POLICY:                    │                                     │ 
+		 │  iam_publish_command       │                                     │
+         │                            │                                     │
+         │                   ┌────────┴────────┐                   ┌────────┴────────┐
+         │                   │ AWS DynamoDB    │                   │ AWS DynamoDB    │
+         │                   │                 │                   │                 │
+         │                   │                 │                   │                 │
+         │                   │ TABLE:          │                   │ TABLE:          │ 
+         │                   │  iot_telemetry  │                   │  iot_events     │
+         │                   └────────▲────────┘                   └────────▲────────┘
+         │                            │                                     │ 
+         │                            │  Rules Engine                       │ Rules Engine 
+         │                            │  rule:  rule-iot-telemetry          │ rule:   rule-iot-events
+		 │                            │   Action: DynamoDB                  │  Action: DynamoDB
+         │                            │   IAM role: iot_telemetry_add       │  IAM role: iot_events_add
+         │                            │   IAM policy: ...-iot_telemetry_add │  IAM policy: ..._iot_events_add 
+   ┌─────▼────────────────────────────┴─────────────────────────────────────┴─────────────────┐
+   │                                                                                          │
+   │                                                                                          │
+   │                                     AWS IoT Core                                         │
+   │                            THINGNAME    :esp32_yakymovich                                │
+   │                                 POLICY  :my_policy1,                                     │
+   │                                     MQTT Broker                                          │
+   │                                                                                          │
+   │                                                                                          │
+   └───────────────────────────────▲─────────────────────────────────────▲────────────────────┘
+         │ Subscribe               │                                     │
+         │ topic:                  │                                     │   
+         │ iot-course/yakymovich/  │                                     │   
+         │ commands/led            │                                     │   
+         │                         │ Publish                             │ Publish
+         │ MQTT over TLS :8883     │ topic:  iot-course/yakymovcih/      │ topic:  iot-course/yakymovcih/ 
+		 │                         │         telemetry                   │          events 
+         │                         │ MQTT over TLS :8883                 │ MQTT over TLS :8883
+┌────────▼──────────────────────────────────┐                            │
+│  ESP32 (Wokwi)                            │────────────────────────────┘
+│  subscribe → LED D2   publish → 10 сек    │
+└───────────────────────────────────────────┘
 ```
 
 **Два незалежні канали в одному брокері.** «Вгору» — пристрій публікує
@@ -68,18 +96,85 @@ README з деталями.
 Все, що склеює три теки — це чотири рядки. Помилка в будь-якому з них ламає
 ланцюг мовчки, без жодної помилки в логах.
 
-| Контракт | Значення | Хто визначає | Хто споживає |
-|---|---|---|---|
-| Топік команд | `iot-course/demo/commands/led` | `FastAPI/iot_client.py` | `ESP32/src/mqtt/mqtt.cpp` |
-| Топік телеметрії | `iot-course/demo/telemetry` | `ESP32/src/mqtt/mqtt.cpp` | Rules Engine → DynamoDB |
-| Тіло команди | `{"action":"set","value":"on"}` | `FastAPI/iot_client.py` | `ESP32/src/led/led.cpp` |
-| Тіло HTTP-запиту | `{"value":"on"\|"off"}` | `HTML/index.html` | `FastAPI/main.py` |
+| Контракт         | Значення                                          | Хто визначає              | Хто споживає                                      |
+| Топік команд     | `iot-course/yakymovich/commands/led`              | `Backend/iot_client.py`   | `ESP32/src/mqtt/mqtt.cpp`                  |       |
+| Топік телеметрії | `iot-course/yakymovich/telemetry`                 | `ESP32/src/mqtt/mqtt.cpp` | Rules Engine → DynamoDB                    |       |
+| Топік подій      | `iot-course/yakymovich/events`                    | `ESP32/src/mqtt/mqtt.cpp` | Rules Engine → DynamoDB                    |       |
+| Тіло команди     | `{"action":"set","value":"on"}`                   | `FastAPI/iot_client.py`   | `ESP32/src/led/led.cpp`                    |       |
+| Тіло HTTP-запиту | `{"value":"on"\|"off"}`                           | `HTML/index.html`         | `FastAPI/main.py`                          |       | 
+| Тіло HTTP-запиту | `http://localhost:8000/sensors/history?minutes=60`| `Backend/db.py`           |  Grafana, Dashboard `HomeTask6`,           |
+|                  |                                                   |                           |   TimeSeries "Температура",                | 
+|				   |              									   |						   |      Gauge "Поточна вологість"             | 
+| Тіло HTTP-запиту | `http://localhost:8000/events?minutes=60`         | `Backend/db.py`           |  Grafana, DashBoard `HomeTask6`,           |
+|                  |                                                   |                           |   Stat "Останні температура та вологість"  |           | 
+| Тіло HTTP-запиту | `http://localhost:8000/sensors/latest`            | `Backend/db.py`           |  Grafana, DashBoard `HomeTask6`,           |
+|                                                                      |                           |   Table "Події"                            |
 
 Пристрій шукає в команді підрядок `"on"` / `"off"` — разом із лапками, щоб
 `"on"` не збігся всередині `"off"`. Поле `action` він зараз ігнорує: воно є
 на виріст, коли команд стане більше однієї.
 
 ---
+
+## Список створених ресурсів AWS
+     
+	 
+	 Thing: 
+         THINGNAME: esp32_yakymovich
+         POLICY : my_policy1
+	
+     IAM user: 
+	     USENAME: iam_user1
+		      ID: 5016-0254-5268
+	   
+	   - IAM POLICIES:
+	       iot_events_read,
+		   iot_telemetry_read;
+		   iam_publish_command
+     	 
+     Rule Engine Rules:
+	     RULE: rule_iot_telemetry
+		    SQL statement: 
+		     SELECT  clientid() as client_id, 
+			          timestamp() as received_at, 
+		     	      device_id, 
+					  timestamp as transmitted_at, 
+			          topic(2) as student, 
+					  temperature, humidity 
+			 FROM 'iot-course/yakymovich/telemetry'
+			 
+		   - IAM_ROLE   : iot_telemetry_add
+		   - IAM_POLICY : aws-iot-rule-rule_iot_telemetry-action-1-role-iot_telemetry_add 
+		   
+		 RULE: rule_iot_events
+		   SQL statement:
+		    SELECT clientid() as client_id, 
+			       timestamp() as received_at, 
+				   device_id, 
+				   timestamp as transmitted_at,
+				   event, 
+				   value 
+		     FROM 'iot-course/yakymovich/events'   
+		   
+		   - IAM ROLE   : role_iot_events_add
+		   - IAM_POLICY : aws-iot-rule-rule_iot_events-action-1-role-role_iot_events_add  
+		   
+     DynamoDBv2 Tables:           
+		   iot_telemetry,   
+           iot_events		   
+
+
+
+## Опис до архітектури
+    
+     ESP-32 опитує сенсори раз у 10 секунд та публікує значення параметрів у топік `iot-course/yakymovich/telemetry`
+	        для прийому команд з хмари підписується на топік `iot-course/yakymovich/commands/led`та вмикає або вимикає LED 
+			у залежності від `value`, після чого публікує статус LED у топік `iot-course/yakymovich/events`
+			У хмарі телеметрія пишеться у таблицю DynamoDBv2 `iot_telemetry`,
+			події у таблицю `iot_events`.
+			
+			
+            	 
 
 ## Порядок запуску
 

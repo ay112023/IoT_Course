@@ -34,9 +34,15 @@ def sensors_latest():
         raise HTTPException(status_code=404, detail="No data yet")
     return item
 
+
 @app.get("/sensors/history")
 def sensors_history(minutes: int = 30):
     return db.get_history(minutes)
+
+@app.get("/events")
+def device_events(minutes: int = 60):
+    return db.get_events(minutes)
+
 
 @app.post("/actuators/led", status_code=202)
 def set_led(cmd:LedCommand):

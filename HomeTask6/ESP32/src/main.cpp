@@ -30,7 +30,8 @@ void setup() {
 void loop() {
      
      if (!mqtt_connected()) {
-
+        
+        // Обробка помилок
        if(!net_wifi_connected() || !timeSynchronized)
           {
             if(!errorMessagePrinted)
@@ -47,21 +48,24 @@ void loop() {
 
     mqtt_poll();   // ОБОВʼЯЗКОВО кожну ітерацію
 
+    // Обробка команд з фронтенду
     const char* cmd = mqtt_take_command();
     if (cmd) {
         led_handle_command(cmd);
         mqtt_publish_event(LED_EVENT, led_status());
     }
 
-   if (due(lastPublish, PUBLISH_INTERVAL)) {  
-        // ponytail: DHT ще нема — заглушка. Замінити на dht_read() у src/dht/
+    // Неблокуюче опитування та публікация данних сенсорів
 
+   if (due(lastPublish, PUBLISH_INTERVAL)) {  
+        
         DHTTData dhttData;
         LDRData ldrData;
         bool readDHTT_OK, readLDR_OK;
         readDHTT_OK = dht_read(&dhttData, &dht);
         readLDR_OK = ldr_read(&ldrData);
          
+        // Обробка помилок сенсорів
         if(readDHTT_OK && readLDR_OK)
         {
             uint8_t status = validateSensors(&dhttData, &ldrData);
