@@ -143,12 +143,15 @@ iot.publish(topic=TOPIC_CMD, qos=1, payload=payload)
 **`get_history(minutes)`** — query по діапазону sort key:
 `device_id = ... AND received_at >= cutoff`. Межа рахується в **мілісекундах**
 (`time.time() * 1000`), бо `received_at` записаний правилом через
-`timestamp()` — а він у мілісекундах (Заняття 11).
+`timestamp()` — а він у мілісекундах 
+
+**`get_events(minutes)`** — query по діапазону sort key:
+`device_id = ... AND received_at >= cutoff`. Межа рахується в **мілісекундах**
+(`time.time() * 1000`), бо `received_at` записаний правилом через
+`timestamp()` — а він у мілісекундах
 
 **Чому query, а не scan:** query йде точно в партицію по ключу і читає тільки
 потрібне. Scan перечитує всю таблицю і фільтрує потім. Ключ будувався саме під
 ці запити ще на Занятті 11.
 
 ---
-
-#

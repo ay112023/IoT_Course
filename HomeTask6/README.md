@@ -1,19 +1,16 @@
 # Домашнє завдання №6
 
 
-Демонстрація зібрки повного IoT-стеку: від пристрою до інтерфейсу керування та побудування API поверх хмарних даних, 
+Демонстрація збірки повного IoT-стеку: від пристрою до інтерфейсу керування та побудування API поверх хмарних даних, 
 візуалізація потоків в реальному часі та замикання  петлі — відправки команди назад на пристрій через той самий стек
 
 
-Три теки — три ланки одного ланцюга. Кожна запускається окремо, кожна має свій
-README.
-
-| Тека | Роль | Технології |
+| Тека      | Роль | Технології |
 |---|---|---|
-| [`HTML/`](HTML/) | Frontend -інтерфейс: дві кнопки | статичний HTML + `fetch` |
+| [`HTML/`](HTML/)       | Frontend -інтерфейс: дві кнопки | статичний HTML + `fetch` |
 | [`Backend/`](FastAPI/) | бекенд: читає телеметрію, публікує команди | Python, FastAPI, boto3 |
-| [`ESP32/`](ESP32/) | пристрій: публікує телеметрію, слухає команди | C++, PlatformIO, Wokwi |
-
+| [`ESP32/`](ESP32/)     | пристрій: публікує телеметрію, слухає команди | C++, PlatformIO, Wokwi |
+| [`Grafana/`](JSON)     | JSON файл для імпорту у Grafana й створення dashboard-у `HomeTask6`
 ---
 
 ## Архітектура
@@ -23,8 +20,8 @@ README.
 
 ┌─────────────────┐                            ┌─────────────────┐
 │     Браузер     │  HTML/index.html           │    Браузер      │
-│  [Увімк./Вимк.] |                            │   [Grafana]     │
-|                 |                            │ [Відображення]  │
+│  [Увімк./Вимк.] |                            │   Grafana або   │
+|                 |                            │   Swagger UI    │
 └────────┬────────┘                            └────────▲────────┘
          │ POST /actuators/led  {"value":"on"}          │ ← GET /sensors/latest
          │ HTTP + CORS          {"value":"off"}         │ ← GET /sensors/history
@@ -104,18 +101,18 @@ README.
 | Тіло HTTP-запиту | `{"value":"on"\|"off"}`                             | `HTML/index.html`         | `FastAPI/main.py`                          |        
 | Тіло HTTP-запиту | `http://localhost:8000/sensors/history?minutes=60`  | `Backend/db.py`           |  Grafana, Dashboard `HomeTask6`,           |
 |                  |                                                     |                           |   TimeSeries "Температура",                | 
-|				   |              									     |						     |    Gauge "Поточна вологість"             | 
+|				   |              									     |						     |    Gauge "Поточна вологість"               | 
 | Тіло HTTP-запиту | `http://localhost:8000/events?minutes=200`          | `Backend/db.py`           |  Grafana, DashBoard `HomeTask6`,           |
 |                  |                                                     |                           |   Stat "Останні температура та вологість"  |           
 | Тіло HTTP-запиту | `http://localhost:8000/sensors/latest`              | `Backend/db.py`           |  Grafana, DashBoard `HomeTask6`,           |
-|                  |                                                     |                           |  Table "Події" 
-| Тіло HTTP-запиту | `http://localhost:8000/health`                      |  `Backend/db.py`          |                              |
+|                  |                                                     |                           |  Table "Події"                             |
+| Тіло HTTP-запиту | `http://localhost:8000/health`                      | `Backend/main.py`         |  Swagger UI                                |
 
 Пристрій шукає в команді підрядок `"on"` / `"off"` — разом із лапками, щоб
 `"on"` не збігся всередині `"off"`. Поле `action` він зараз ігнорує: воно є
 на виріст, коли команд стане більше однієї.
 
-*Параметр `minutes` у телеметрії та подій за замовчуванням у бекенді == 30, для
+Параметр `minutes` у телеметрії та подій за замовчуванням у бекенді == 30, для
  відображення у Grafana взяв minutes=60 для телеметрії та minutes=200 для подій.
 ---
 
@@ -257,7 +254,10 @@ fastapi dev main.py          # або: uvicorn main:app --reload
 кнопку. 
 
 
-**4. Grafana->Dashboards->HomeTask6
+**4. Grafana: **  встановити плагін Infinity, створити datasource  `iot-course-infinity-datasource-1` 
+     створити dashboard HomeTask6 у Dashboards імпортом файлу Grafana/HomeTask6.json,
+	 відкрити створений dashboard. Якщо dashboard HomeTask6 вже створений - просто зайти на нього.
+	 
 ---
 
 
