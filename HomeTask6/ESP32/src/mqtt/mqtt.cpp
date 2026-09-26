@@ -223,6 +223,7 @@ void mqtt_publish_event(uint8_t event_id, uint8_t value){
     char payload[160];
     if(make_event_payload(payload, sizeof(payload), event_id, value))
     { 
+        //  Звісно, публікувати event треба із QoS = 1 але - ...
         bool ok = mqttClient.publish(TOPIC_EVENTS, payload);
         Serial.print("Публікуємо: ");
         Serial.println(payload);
