@@ -21,7 +21,7 @@
 ┌─────────────────┐                            ┌─────────────────┐
 │     Браузер     │  HTML/index.html           │    Браузер:     │
 │  [Увімк./Вимк.] |                            │   Grafana або   │
-|                 |                            │   Swagger UI    │
+|                 |                            │   Swagger UI    │  Swagger UI: http://localhost:8000/docs
 └────────┬────────┘                            └────────▲────────┘
          │ POST /actuators/led  {"value":"on"} або      │ ← GET /sensors/latest
          │ HTTP + CORS          {"value":"off"}         │ ← GET /sensors/history
@@ -180,23 +180,26 @@
 	Frontend
 	        Для видавання команд використовується HTML сторінка із кнопками,
 			командою   POST http://localhost:8000/actuators/led
-               │                Content-Type: application/json
-                             │  {"value":"on"} або {"value":"off"} ->
+                                Content-Type: application/json
+                               {"value":"on"} або {"value":"off"} ->
 							topic `iot-course/yakymovich/commands/led`
-			Для відображення використовується Grafana,
-			Infinity DataSource iot-course-infinity-datasource-1,
-			dashboard "HomeTask6"
-			команди:
+			Для графічного відображення телеметрії та подій використовується веб-додаток Grafana:
+			Infinity DataSource `iot-course-infinity-datasource-1`,
+			dashboard `HomeTask6`. Також для відображення у вигляді JSON структур із метою отладки
+			може бути використаний вбудований у backend веб-додаток Swagger UI,
+			що доступний по адресі http://localhost:8000/docs.
+			Команди:
 			   GET http://localhost:8000/sensors/history?minutes=60 <- DynamoDBv2, table `iot_telemetry`			       
-			       температура та вологість глибиною по часу 60 хвилин:
+			       Температура та вологість глибиною по часу 60 хвилин:
 			       TimeSeries "Температура" - графік, вісь X - час, вісь Y - температура
 				   Gauge "Поточна вологість" - поточне значення вологості
 			   GET http://localhost:8000/sensors/latest	<- DynamoDBv2, table `iot_telemetry`
-                   Останні у history (найновіші) виміри температури та вологосі 			   
+                   Останні у history (найновіші) виміри температури та вологості 			   
 			       Stat "Останні температура та вологість"
-			   GET http://127.0.0.1:8000/events?minutes=200 <-  DynamoDBv2, table `iot_events`                  			   
-			       Події присторю глибиною по часу 200 хвилин
+			   GET http://localhost:8000/events?minutes=200 <-  DynamoDBv2, table `iot_events`                  			   
+			       Події пристрою глибиною по часу 200 хвилин
 				   Table "Події"
+			   GET http://localhost:8000/health  <- main.py 
 			   
 ## Структура проекту
 

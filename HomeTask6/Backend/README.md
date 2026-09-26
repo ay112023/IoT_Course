@@ -56,7 +56,7 @@ iot_telemetry, iot_events
 (можливо, помиляюся, але без цієї привилеї не читалося)
 
 ( Наступна частина взята з оригінального вихідного файлу README.md до завдання 
-  додаано описання ендпоінту `/sensors/events?minutes=30` та 
+  додано описання ендпоінту `/sensors/events?minutes=30` та 
   процедури `get_events(minutes)` )
 
 > `load_dotenv()` у `main.py` викликається **до** `import db` — бо `db.py`
