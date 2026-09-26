@@ -6,7 +6,7 @@
 
 
 Три теки — три ланки одного ланцюга. Кожна запускається окремо, кожна має свій
-README з деталями.
+README.
 
 | Тека | Роль | Технології |
 |---|---|---|
@@ -29,6 +29,7 @@ README з деталями.
          │ POST /actuators/led  {"value":"on"}          │ ← GET /sensors/latest
          │ HTTP + CORS          {"value":"off"}         │ ← GET /sensors/history
          │                                              │ ← GET /events 
+         │                                              │ ← GET /health
 ┌────────▼──────────────────────────────────────────────┴────────────────────────────────────┐
 │  FastAPI  :8000                                                                            │  
 │  main.py · iot_client.py · db.py                                                           │  
@@ -95,24 +96,27 @@ README з деталями.
 Все, що склеює три теки — це наступні рядки. Помилка в будь-якому з них ламає
 ланцюг мовчки, без жодної помилки в логах.
 
-| Контракт         | Значення                                          | Хто визначає              | Хто споживає                                      |
-| Топік команд     | `iot-course/yakymovich/commands/led`              | `Backend/iot_client.py`   | `ESP32/src/mqtt/mqtt.cpp`                  |       |
-| Топік телеметрії | `iot-course/yakymovich/telemetry`                 | `ESP32/src/mqtt/mqtt.cpp` | Rules Engine → DynamoDB                    |       |
-| Топік подій      | `iot-course/yakymovich/events`                    | `ESP32/src/mqtt/mqtt.cpp` | Rules Engine → DynamoDB                    |       |
-| Тіло команди     | `{"action":"set","value":"on"}`                   | `FastAPI/iot_client.py`   | `ESP32/src/led/led.cpp`                    |       |
-| Тіло HTTP-запиту | `{"value":"on"\|"off"}`                           | `HTML/index.html`         | `FastAPI/main.py`                          |       | 
-| Тіло HTTP-запиту | `http://localhost:8000/sensors/history?minutes=60`| `Backend/db.py`           |  Grafana, Dashboard `HomeTask6`,           |
-|                  |                                                   |                           |   TimeSeries "Температура",                | 
-|				   |              									   |						   |      Gauge "Поточна вологість"             | 
-| Тіло HTTP-запиту | `http://localhost:8000/events?minutes=60`         | `Backend/db.py`           |  Grafana, DashBoard `HomeTask6`,           |
-|                  |                                                   |                           |   Stat "Останні температура та вологість"  |           | 
-| Тіло HTTP-запиту | `http://localhost:8000/sensors/latest`            | `Backend/db.py`           |  Grafana, DashBoard `HomeTask6`,           |
-|                                                                      |                           |   Table "Події"                            |
+| Контракт         | Значення                                            | Хто визначає              | Хто споживає                                      
+| Топік команд     | `iot-course/yakymovich/commands/led`                | `Backend/iot_client.py`   | `ESP32/src/mqtt/mqtt.cpp`                  |       
+| Топік телеметрії | `iot-course/yakymovich/telemetry`                   | `ESP32/src/mqtt/mqtt.cpp` | Rules Engine → DynamoDB                    |       
+| Топік подій      | `iot-course/yakymovich/events`                      | `ESP32/src/mqtt/mqtt.cpp` | Rules Engine → DynamoDB                    |       
+| Тіло команди     | `{"action":"set","value":"on"}`                     | `FastAPI/iot_client.py`   | `ESP32/src/led/led.cpp`                    |       
+| Тіло HTTP-запиту | `{"value":"on"\|"off"}`                             | `HTML/index.html`         | `FastAPI/main.py`                          |        
+| Тіло HTTP-запиту | `http://localhost:8000/sensors/history?minutes=60`  | `Backend/db.py`           |  Grafana, Dashboard `HomeTask6`,           |
+|                  |                                                     |                           |   TimeSeries "Температура",                | 
+|				   |              									     |						     |    Gauge "Поточна вологість"             | 
+| Тіло HTTP-запиту | `http://localhost:8000/events?minutes=200`          | `Backend/db.py`           |  Grafana, DashBoard `HomeTask6`,           |
+|                  |                                                     |                           |   Stat "Останні температура та вологість"  |           
+| Тіло HTTP-запиту | `http://localhost:8000/sensors/latest`              | `Backend/db.py`           |  Grafana, DashBoard `HomeTask6`,           |
+|                  |                                                     |                           |  Table "Події" 
+| Тіло HTTP-запиту | `http://localhost:8000/health`                      |  `Backend/db.py`          |                              |
 
 Пристрій шукає в команді підрядок `"on"` / `"off"` — разом із лапками, щоб
 `"on"` не збігся всередині `"off"`. Поле `action` він зараз ігнорує: воно є
 на виріст, коли команд стане більше однієї.
 
+*Параметр `minutes` у телеметрії та подій за замовчуванням у бекенді == 30, для
+ відображення у Grafana взяв minutes=60 для телеметрії та minutes=200 для подій.
 ---
 
 ## Список створених ресурсів AWS
@@ -128,7 +132,7 @@ README з деталями.
 	   
 	   - IAM POLICIES:
 	       iot_events_read,
-		   iot_telemetry_read;
+		   iot_telemetry_read,
 		   iam_publish_command
      	 
      Rules Engine Rules:
@@ -170,10 +174,62 @@ README з деталями.
 	        для прийому команд з хмари підписується на топік `iot-course/yakymovich/commands/led`та вмикає або вимикає LED 
 			у залежності від `value`, після чого публікує статус LED у топік `iot-course/yakymovich/events`
 			У хмарі телеметрія пишеться у таблицю DynamoDBv2 `iot_telemetry`,
-			події у таблицю `iot_events`.
-			
-			
-            	 
+			події у таблицю `iot_events`. 
+	Backend 		
+			Підключається до хмари під користувачем iam_user1, що для нього створені політики
+			iot_events_read, iot_telemetry_read для читання таблиць DynamoDB iot_telemetry, iot_events та
+			політика  iam_publish_command для публікації команд через AWS MQTT Broker у топіку 
+			`iot-course/yakymovich/commands/led`. 
+	Frontend
+	        Для видавання команд використовується HTML сторінка із кнопками,
+			командою   POST http://localhost:8000/actuators/led
+               │                Content-Type: application/json
+                             │  {"value":"on"} або {"value":"off"} ->
+							topic `iot-course/yakymovich/commands/led`
+			Для відображення використовується Grafana,
+			Infinity DataSource iot-course-infinity-datasource-1,
+			dashboard "HomeTask6"
+			команди:
+			   GET http://localhost:8000/sensors/history?minutes=60 <- DynamoDBv2, table `iot_telemetry`			       
+			       температура та вологість глибиною по часу 60 хвилин:
+			       TimeSeries "Температура" - графік, вісь X - час, вісь Y - температура
+				   Gauge "Поточна вологість" - поточне значення вологості
+			   GET http://localhost:8000/sensors/latest	<- DynamoDBv2, table `iot_telemetry`
+                   Останні у history (найновіші) виміри температури та вологосі 			   
+			       Stat "Останні температура та вологість"
+			   GET http://127.0.0.1:8000/events?minutes=200 <-  DynamoDBv2, table `iot_events`                  			   
+			       Події присторю глибиною по часу 200 хвилин
+				   Table "Події"
+			   
+## Структура проекту
+
+ ── HomeTask6    
+    ├── Backend  Fast API, Python - Бекенд
+    ├── ESP32    Прошивка ESP32, C++        
+    ├── Grafana  JSON, дашбоард HomeTask6 
+    ├── HTML 	 HTML + javascript, фронтенд
+	├── screenshots скріншоти роботи
+   README.md    	
+
+## Скріншоти
+    1  Запуск ESP-32, синхронізація, коннект с AWS, підписка на ../commands/led, публікація сенсорів
+    2  Відображення вимірів у Grafana Dashboard (Table подій поки що пустий) 
+	3  Фронтенд -> видавання команди + робота callback-у ESP32, публікація подій із статусом led
+	4  Відображення подій у Grafana, table "Події"
+	5  Thing 
+	6  Policy my_policy1
+    7  IAM user
+    8  Policy iam_publish_command
+    9  Policy iam_events_read
+   10  Policy iot_telemtry_read
+   11  Rule rule_iot_telemetry
+   12  Rule rule_iot_events
+   13  IAM role iot_telemetry_add
+   14  IAM policy aws-iot-rule-rule_iot_telemetry-action-1-role-iot_telemetry_add 
+   15  IAM role iot_events_add
+   16  IAM policy  aws-iot-rule-rule_iot_events-action-1-role-role_iot_events_add  
+   17  DynamoDBv2 iot_events
+   18  DynamoDbv2 iot_telemetry
 
 ## Порядок запуску
 
@@ -198,165 +254,11 @@ fastapi dev main.py          # або: uvicorn main:app --reload
 знаходить об'єкт `app` у файлі й друкує посилання на `/docs`.
 
 **3. HTML** (тека `HTML/`) — відкрити `index.html` подвійним кліком і натиснути
-кнопку.
+кнопку. 
 
+
+**4. Grafana->Dashboards->HomeTask6
 ---
 
-## Де що ламається
 
-Ланцюг довгий, і кожна ланка мовчить по-своєму. Головне правило: **не шукати
-причину там, де побачив симптом.**
 
-| Симптом | Ланка-винуватець | Деталі |
-|---|---|---|
-| Кнопка → «Помилка мережі» | бекенд не запущений | [`HTML/`](HTML/README.md) |
-| «CORS policy» у консолі, `200` у логах uvicorn | бекенд: `CORSMiddleware` | [`FastAPI/`](FastAPI/README.md) |
-| `422` у відповіді | браузер: не те тіло запиту | [`HTML/`](HTML/README.md) |
-| `502` у відповіді | бекенд: немає доступу до AWS IoT | [`FastAPI/`](FastAPI/README.md) |
-| `202`, але LED мовчить | пристрій: підписка, Policy або TLS | [`ESP32/`](ESP32/README.md) |
-| Телеметрії немає в `/sensors/latest` | пристрій або Rules Engine | Заняття 11 |
-
-**Точка розриву посередині — MQTT test client** в AWS IoT Console. Підпишіться
-на `iot-course/demo/commands/led` і натисніть кнопку. Побачили JSON — винні
-браузер або бекенд уже ні в чому, шукайте в пристрої. Не побачили — далі
-пристрою можна не йти.
-
----
-
-## Секрети
-
-Дві теки мають файли, які **до git не потрапляють**:
-
-| Файл | Тека | Шаблон |
-|---|---|---|
-| `.env` | `FastAPI/` | `.env.example` |
-| `src/secrets.h` | `ESP32/` | `src/secrets.example.h` |
-
-Обидва — у `.gitignore`. Ключ, що потрапив у git, вважається скомпрометованим,
-навіть якщо його звідти видалили наступним комітом.
-
-**Дозволи IAM для бекенда** — рівно два, кожен на конкретний ресурс:
-`dynamodb:Query` на таблицю `iot_telemetry` і `iot:Publish` на ARN топіка
-команд. Не `AdministratorAccess` «щоб працювало».
-
----
-
-## Що з чого виросло
-
-| Заняття | Що додало |
-|---|---|
-| 9 | Thing, сертифікати, Policy |
-| 10 | MQTT over TLS з ESP32 → IoT Core |
-| 11 | Rules Engine → DynamoDB |
-| 12 | FastAPI: читання таблиці (`GET /sensors/*`) |
-| 13 | Grafana поверх тих самих даних |
-| **14** | **зворотний канал: `POST /actuators/led` → топік → пристрій** |
-
-Кожна ланка додавалась окремо і жодного разу не переписувалась — це і є
-розв'язана (decoupled) архітектура на практиці.
-
----
-
-## Ключові факти заняття
-
-- Браузер і пристрій ніколи не бачать одне одного. Між ними два посередники,
-  і кожен можна замінити окремо
-- `202 Accepted` — чесна відповідь на команду: прийняв і передав далі,
-  за виконання не ручаюсь
-- Два канали, два QoS: команда — QoS 1 (повторити нікому), телеметрія — QoS 0
-  (наступний пакет перекриє)
-- Три ланки — три різні протоколи: HTTP, boto3/HTTPS, MQTT over TLS
-- Спільне в них — не код, а чотири рядки контрактів: два топіки і два JSON
-- **Пристрій дає дані — хмара дає гарантії — бекенд дає доступ і керування**
-
----
-
-## Домашнє завдання
-
-Демо в цих трьох теках покриває більшу частину ДЗ, але **не все**: топіки тут
-`iot-course/demo/...`, а у вас має бути своє ім'я замість `demo`. І головного —
-підтвердження від пристрою (`events`) — у демо немає взагалі. Це ваша робота.
-
-### Частина 1: Backend API
-
-Створити FastAPI з ендпоінтами:
-
-| Метод | Шлях | Що повертає |
-|---|---|---|
-| GET | `/sensors/latest` | останні дані з DynamoDB |
-| GET | `/sensors/history?minutes=30` | історія за N хвилин |
-| POST | `/actuators/led` | команда на ESP32 через AWS IoT |
-
-Додати `iot:Publish` до IAM-політики користувача, під яким працює бекенд — без
-цього публікація поверне `ForbiddenException`.
-
-Запустити локально й протестувати всі три через `/docs`, Postman або curl.
-
-### Частина 2: Grafana Dashboard
-
-Підключити Grafana до FastAPI через **Infinity datasource** і зібрати дашборд
-із трьох панелей:
-
-| Панель | Дані |
-|---|---|
-| Time series | температура за останні 30 хвилин |
-| Gauge | поточна вологість |
-| Stat | останній timestamp |
-
-Експортувати дашборд у JSON (Dashboard settings → JSON Model) і покласти в
-репозиторій.
-
-### Частина 3: Зворотний зв'язок
-
-1. ESP32 підписується на топік `iot-course/<name>/commands/led`.
-2. Через FastAPI відправити команду `{"action": "set", "value": "on"}` — LED
-   має засвітитись.
-3. Створити HTML-сторінку з кнопками «увімкнути» / «вимкнути», яка викликає
-   ендпоінт FastAPI. (У Grafana OSS кнопки з POST немає без додаткових плагінів
-   — тому окрема сторінка.)
-4. Після виконання команди ESP32 публікує підтвердження в топік
-   `iot-course/<name>/events` у форматі `{"event": "led_changed", "value": "on"}`.
-
-**Опційно (на плюс):** IoT Rule, що складає події в окрему таблицю DynamoDB, і
-панель Table в Grafana з останніми подіями.
-
-### Здача
-
-Репозиторій із прошивкою ESP32, бекендом, HTML-сторінкою, JSON-дашбордом і
-README. У README:
-
-- архітектурна діаграма (Device → AWS IoT → DynamoDB → FastAPI → Grafana) з
-  **обома** напрямками руху даних;
-- список створених ресурсів AWS: Thing, Policy, Rules, таблиці;
-- інструкція запуску: змінні середовища, команди, порти.
-
-### Критерії
-
-- FastAPI працює, ендпоінти повертають реальні дані з DynamoDB
-- Grafana відображає актуальні дані з автооновленням
-- Команди з хмари коректно доходять до ESP32 і виконуються
-- Пристрій підтверджує виконання команди у власному топіку
-- README дозволяє відтворити налаштування з нуля
-
----
-
-## Додаткові матеріали
-
-### ESP32 / MQTT
-
-- PubSubClient API — [pubsubclient.knolleary.net/api](https://pubsubclient.knolleary.net/api)
-- PubSubClient на GitHub — [github.com/knolleary/pubsubclient](https://github.com/knolleary/pubsubclient)
-
-### AWS
-
-- MQTT в AWS IoT Core — [docs.aws.amazon.com/iot/…/mqtt.html](https://docs.aws.amazon.com/iot/latest/developerguide/mqtt.html)
-- Дії в IoT Policy — [docs.aws.amazon.com/iot/…/iot-policy-actions.html](https://docs.aws.amazon.com/iot/latest/developerguide/iot-policy-actions.html)
-- Приклади Pub/Sub-політик — [docs.aws.amazon.com/iot/…/pub-sub-policy.html](https://docs.aws.amazon.com/iot/latest/developerguide/pub-sub-policy.html)
-
-### Бекенд
-
-- boto3 `iot-data.publish` — [boto3.amazonaws.com/…/iot-data/client/publish](https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iot-data/client/publish.html)
-- CORS у FastAPI — [fastapi.tiangolo.com/tutorial/cors](https://fastapi.tiangolo.com/tutorial/cors/)
-- Чому `*` несумісна з credentials — [developer.mozilla.org/…/CORSNotSupportingCredentials](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNotSupportingCredentials)
-
----

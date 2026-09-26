@@ -25,6 +25,7 @@
 
 // Контроль неблокуючих таймерів
 bool due(unsigned long& last, unsigned long interval);
-// 
+// Перевірка сенсорів
 uint8_t validateSensors(DHTTData* dhttpayload, LDRData* ldrpayload);
+// Вивід статусу сенсорів 
 void printSensorsStatus(uint8_t status);

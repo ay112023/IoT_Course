@@ -1,38 +1,23 @@
-# Лекція 14 — HTML: дві кнопки, які вмикають світло за 3000 км
+# Домашнє завдання № 6, Backend (FastAPI, Python) для роботи у стеку:
+        ESP32 - Frontend - Backend - AWS, 
 
 Найпростіша ланка з трьох — одна сторінка без збірки, без фреймворка, без
 залежностей. Дві кнопки, `fetch()` до FastAPI і поле, куди чесно виводиться
 відповідь сервера. Саме тут ланцюг «браузер → бекенд → хмара → пристрій»
 починається.
 
-Ця тека — перша ланка з трьох: **`HTML/`** → `FastAPI/` (бекенд) →
+Ця тека — перша ланка з трьох: **`HTML/`** → `BackendI/` (бекенд) →
 `ESP32/` (прошивка з підпискою на команди).
 
----
-
-## Архітектура
-
-```
-┌──────────────────────────────┐
-│  index.html                  │  один файл, відкривається подвійним кліком
-│  [Увімкнути]  [Вимкнути]     │
-└──────────────┬───────────────┘
-               │ fetch POST http://localhost:8000/actuators/led
-               │ Content-Type: application/json
-               │ {"value":"on"}
-               ▼
-┌──────────────────────────────┐
-│  FastAPI  :8000              │  202 Accepted
-└──────────────┬───────────────┘
-               │ publish → topic: iot-course/demo/commands/led
-               ▼
-        AWS IoT Core  →  ESP32  →  LED
-```
 
 Сторінка знає рівно одну адресу і рівно одне поле в JSON. Ні про AWS, ні про
 MQTT, ні про пристрій вона не чула — і не повинна.
 
 ---
+
+## Архітектура
+
+Повну архітектурну схему див. у ../README.md
 
 ## Структура проєкту
 
@@ -48,7 +33,7 @@ index.html   — розмітка, стилі і скрипт в одному ф
 
 ## Як запустити
 
-1. Запустити бекенд (тека `FastAPI/`):
+1. Запустити бекенд (тека `Backend/`):
 
    ```powershell
    fastapi dev main.py          # або: uvicorn main:app --reload
@@ -128,31 +113,3 @@ CORS обійти не можна. Деталі — у README теки `FastAPI/
 
 ---
 
-## Ключові факти заняття
-
-- Щоб керувати пристроєм у хмарі, фреймворк не потрібен: `fetch` і дві кнопки
-- `fetch` **не кидає виняток** на 4xx/5xx — статус перевіряємо самі
-- Читати тіло як `text()` надійніше за `json()`, коли форма відповіді не гарантована
-- CORS — обмеження браузера. Помилка в консолі, а причина на сервері
-- `Content-Type: application/json` робить запит непростим і вмикає preflight
-- Кнопки блокуються на час запиту й розблоковуються у `finally` — інакше один
-  збій вбиває сторінку
-
----
-
-## Рекомендована література
-
-- `fetch()` — [developer.mozilla.org/…/Fetch_API/Using_Fetch](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch)
-- Чому fetch не reject-ить на 404 — [developer.mozilla.org/…/Window/fetch](https://developer.mozilla.org/en-US/docs/Web/API/Window/fetch#exceptions)
-- CORS — [developer.mozilla.org/…/HTTP/CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
-- Preflight-запит — [developer.mozilla.org/…/Glossary/Preflight_request](https://developer.mozilla.org/en-US/docs/Glossary/Preflight_request)
-- `async/await` — [developer.mozilla.org/…/Statements/async_function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function)
-
-### Копни глибше (по бажанню)
-
-- **Показувати стан LED** — `GET /sensors/latest` раз на кілька секунд замість «випустив і забув»
-- **AbortController** — таймаут на `fetch`, щоб зависла мережа не тримала кнопки заблокованими
-- **Роздати сторінку з FastAPI** (`StaticFiles`) — тоді origin спільний і CORS не потрібен взагалі
-- **`localhost` vs `127.0.0.1`** — для браузера це різні origin, хоч і одна машина
-
----
