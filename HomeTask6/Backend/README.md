@@ -1,8 +1,10 @@
-# Домашнє завдання № 6, Backend (FastAPI, Python) для роботи у стеку:
-        ESP32 - Frontend - Backend - AWS, 
+# Домашнє завдання № 6 
+      Backend (FastAPI, Python) для роботи у IoT стеку:
+      ESP32 - AWS - Backend - Frontend  
 		
 **Два незалежні канали.** «Вгору» — пристрій публікує телеметрію та події пристрою, 
-правила кладе їх в таблиці, бекенд читає таблиці. «Вниз» — бекенд публікує команду в топік,
+у топіки, правила кладуть їх в таблиці iot_telemetry та iot_events, 
+бекенд читає таблиці. «Вниз» — бекенд публікує команду в топік `iot-course/yakymovich/commands/led`, 
 пристрій її забирає. Бекенд і пристрій так само не знають одне про одного:
 спільна точка — назва топіка, не адреса. 
 
@@ -16,17 +18,13 @@
 
 ```
 main.py           — FastAPI-застосунок, ендпоінти, CORS, валідація команди
-db.py             — читання DynamoDB (boto3 query)
+db.py             — читання DynamoDB  (boto3 query)
 iot_client.py     — публікація команди в AWS IoT Core (boto3 iot-data)
 requirements.txt  — залежності Python
 .env              — AWS-ключі та конфігурація (У .gitignore!)
 .env.example      — шаблон .env для копіювання
 ```
 
-Читання й запис розведені по різних модулях навмисно: це різні сервіси AWS
-(`dynamodb` і `iot-data`), різні дозволи IAM і різні причини зламатися.
-
----
 
 ## Налаштування .env
 
@@ -35,29 +33,37 @@ requirements.txt  — залежності Python
 1. Скопіювати `.env.example` → `.env`.
 2. Вписати свої значення:
 
-| Змінна | Що це |
-|---|---|
-| `AWS_ACCESS_KEY_ID` | ключ IAM-користувача |
-| `AWS_SECRET_ACCESS_KEY` | секретна частина ключа |
-| `AWS_DEFAULT_REGION` | регіон — `eu-north-1` (звідси його бере і DynamoDB, і IoT) |
-| `TABLE_NAME` | `iot_telemetry` |
-| `DEVICE_ID` | `esp32lecture10` — partition key, за яким робимо query |
+| Змінна                  | Що це                                        -             |
+|-------------------------|------------------------------------------------------------|
+| `AWS_ACCESS_KEY_ID`     | ключ IAM-користувача                                       |
+| `AWS_SECRET_ACCESS_KEY` | секретна частина ключа                                     |
+| `AWS_DEFAULT_REGION`    | регіон — `eu-north-1` (звідси його бере і DynamoDB, і IoT) |
+| `TABLE_NAME`            | `iot_telemetry`                                            |
+| `TABLE_NAME_EVENTS`     | `iot_events`                                               |
+| `DEVICE_ID`             | `esp32_yakymovich` — partition key, за яким робимо query   |
 
-**Дозволи IAM.** До `dynamodb:Query` із Заняття 12 тепер додається
-`iot:Publish` на ARN топіка команд:
+**Дозволи IAM.** 
+читання таблиць та публікація команд
+відбувається під IAM User-ом iam_user1,
+якому політиками видані наступні мінімальні привилеї:
 
-```
-arn:aws:iot:eu-north-1:<account-id>:topic/iot-course/demo/commands/led
-```
+iot:Publish на топік /iot-course/yakymovich/led,
 
-Принцип найменших привілеїв той самий, що на Заняттях 9 і 11: два дозволи на
-два конкретні ресурси. Не `AdministratorAccess` «щоб працювало».
+dynamodb:Scan, dynambdb:Query на таблиці
+iot_telemetry, iot_events
+
+а також dynambodb:ListTables на усі таблиці [*]
+(можливо, помиляюся, але без цієї привилеї не читалося)
+
+( Наступна частина взята з оригінального вихідного файлу README.md до завдання 
+  додаано описання ендпоінту `/sensors/events?minutes=30` та 
+  процедури `get_events(minutes)` )
 
 > `load_dotenv()` у `main.py` викликається **до** `import db` — бо `db.py`
 > читає змінні середовища прямо при імпорті. Поміняєте порядок — отримаєте
 > підключення до регіону `None`.
 
----
+
 
 ## Як запустити
 
@@ -86,10 +92,10 @@ fastapi dev main.py
 
 | Метод | Шлях | Що робить |
 |---|---|---|
-| GET | `/health` | `{"status": "ok"}` — живий чи ні |
-| GET | `/sensors/latest` | останній запис пристрою; `404`, якщо даних ще немає |
-| GET | `/sensors/history?minutes=30` | записи за останні N хвилин |
-| GET | `/sensors/events ?minutes=30` | записи за останні N хвилин |
+| GET  | `/health` | `{"status": "ok"}` — живий чи ні |
+| GET  | `/sensors/latest` | останній запис пристрою; `404`, якщо даних ще немає |
+| GET  | `/sensors/history?minutes=30` | записи за останні N хвилин |
+| GET  | `/sensors/events ?minutes=30` | записи за останні N хвилин |
 | POST | `/actuators/led` | публікує команду; `202`, `422` або `502` |
 
 ### POST /actuators/led

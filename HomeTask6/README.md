@@ -19,11 +19,11 @@
          ↓ КОМАНДИ (вниз)                              ↑ ТЕЛЕМЕТРІЯ та ПОДІЇ (вгору)
 
 ┌─────────────────┐                            ┌─────────────────┐
-│     Браузер     │  HTML/index.html           │    Браузер      │
+│     Браузер     │  HTML/index.html           │    Браузер:     │
 │  [Увімк./Вимк.] |                            │   Grafana або   │
 |                 |                            │   Swagger UI    │
 └────────┬────────┘                            └────────▲────────┘
-         │ POST /actuators/led  {"value":"on"}          │ ← GET /sensors/latest
+         │ POST /actuators/led  {"value":"on"} або      │ ← GET /sensors/latest
          │ HTTP + CORS          {"value":"off"}         │ ← GET /sensors/history
          │                                              │ ← GET /events 
          │                                              │ ← GET /health
