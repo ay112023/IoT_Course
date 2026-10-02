@@ -120,13 +120,13 @@ static void work_cycle() {
     led_set(indicator);
 
     // ── 1-2. Мережа, час, TLS, MQTT + підписки ──
-    if (!mqtt_begin()) {
+    if (!mqtt_begin_retry(1000, 30000)) {
         Serial.println("[MAIN] Мережа недоступна — спимо до наступної спроби");
         go_to_sleep();
         return;
     }
 
-    if (!mqtt_connect()) {
+    if (!mqtt_connect_retry(1000, 30000)) {
         Serial.println("[MAIN] MQTT не підключився — спимо до наступної спроби");
         go_to_sleep();
         return;

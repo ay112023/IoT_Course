@@ -36,12 +36,16 @@ def sensors_latest():
 
 
 @app.get("/sensors/history")
-def sensors_history(minutes: int = 30):
-    return db.get_history(minutes)
+def sensors_history(hours: int = 24):
+ if hours <= 24:
+    return db.get_history(hours)
+ else:
+    raise HTTPException(status_code=404, detail="Interval is too big!")
+     
 
 @app.get("/events")
-def device_events(minutes: int = 60):
-    return db.get_events(minutes)
+def device_events(num: int = 60):
+    return db.get_events(num)
 
 
 @app.post("/actuators/led", status_code=202)

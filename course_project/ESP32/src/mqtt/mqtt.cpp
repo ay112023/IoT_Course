@@ -100,6 +100,12 @@ bool mqtt_begin() {
         timeSynchronized = net_time_sync();
         if(timeSynchronized)break;
     }
+    
+    if(!timeSynchronized) 
+    {
+        Serial.println("[AWS] Час не синхронізувався — далі йти немає сенсу");
+        return false;
+    }
 
     // 3. Три файли з Заняття 10 у TLS-клієнт
     net.setCACert(AWS_CERT_CA);
@@ -125,6 +131,31 @@ bool mqtt_begin() {
     return true;
 }
 
+// Повторюємо mqtt_begin() із збільшенням інтервалу між спробами.
+bool mqtt_begin_retry(uint32_t min_interval, uint32_t max_interval){
+
+    uint32_t interval = min_interval;
+    float p = 1;
+    bool exit = false;
+    while(!exit)
+    {             
+        if(interval >= max_interval) 
+        {
+            interval = max_interval;
+            exit = true;
+        }
+        
+        if(mqtt_begin()) return true;
+         Serial.print("[AWS] Перепідключення,наступна спроба через ");
+        Serial.print(interval);
+        Serial.println(" мс");
+        delay(interval);        
+        interval = 1000*pow(2,p++);        
+    }
+
+    Serial.print("[AWS] Перепідключення не вдалося.");
+    return false;
+}
 // Client ID = THINGNAME — Policy обмежує Connect саме по ньому
 bool mqtt_connect() {
     Serial.print("[MQTT] Підключаємось до AWS IoT Core...");
@@ -193,6 +224,32 @@ bool mqtt_connect() {
     return true;
 }
 
+
+// Повторюємо mqtt_connect() із збільшенням інтервалу між спробами.
+bool mqtt_connect_retry(uint32_t min_interval, uint32_t max_interval){
+
+   uint32_t interval = min_interval;
+    float p = 1;
+    bool exit = false;
+    while(!exit)
+    {             
+        if(interval >= max_interval) 
+        {
+            interval = max_interval;
+            exit = true;
+        }
+        
+        if(mqtt_connect()) return true;
+        Serial.print("[MQTT] Перепідключення,наступна спроба через");
+        Serial.print(interval);
+        Serial.println(" мс");
+        delay(interval);
+        interval = 1000*pow(2,p++);        
+    }
+
+    Serial.print("[MQTT] Перепідключення не вдалося.");
+    return false;
+}
 bool mqtt_connected() {
     return mqttClient.connected();
 }

@@ -10,7 +10,9 @@ extern bool timeSynchronized;
 
 // ── Життєвий цикл ──────────────────────────────────────────
 bool mqtt_begin();          // Wi-Fi + час + TLS + налаштування клієнта
+bool mqtt_begin_retry(uint32_t min_interval,uint32_t max_interval);//блокуючий із повторними спробами
 bool mqtt_connect();        // connect() + підписки + запит наступної роботи
+bool mqtt_connect_retry(uint32_t min_interval,uint32_t max_interval);//блокуючий із повторними спробами
 bool mqtt_connected();
 void mqtt_poll();           // mqttClient.loop() — кожну ітерацію
 void mqtt_reconnect_tick(); // неблокуючий реконект по інтервалу

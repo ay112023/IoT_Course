@@ -31,10 +31,10 @@ def get_latest():
     return items[0] if items else None
 
 
-def get_history(minutes):
-    """Записи пристрою за останні N хвилин."""
+def get_history(hours):
+    """Записи пристрою за останні N годин."""
     now_ms = int(time.time() * 1000)            # зараз — у мілісекундах
-    cutoff_ms = now_ms - minutes * 60 * 1000    # межа: N хвилин тому
+    cutoff_ms = now_ms - hours * 60 * 60 * 1000    # межа: N годин тому
 
     response = table.query(
         KeyConditionExpression=Key("client_id").eq(DEVICE_ID)
@@ -42,14 +42,12 @@ def get_history(minutes):
     )
     return response["Items"]
 
-def get_events(minutes):
+def get_events(num):
     """Записи подій пристрою за останні N хвилин."""
-    now_ms = int(time.time() * 1000)            # зараз — у мілісекундах
-    cutoff_ms = now_ms - minutes * 60 * 1000    # межа: N хвилин тому
-
     response = table_events.query(
-        KeyConditionExpression=Key("client_id").eq(DEVICE_ID)
-                               & Key("received_at").gte(cutoff_ms),
+    KeyConditionExpression=Key("client_id").eq(DEVICE_ID),   
+    ScanIndexForward=False,   # найновіші згори
+    Limit=num,
     )
     return response["Items"]
 
