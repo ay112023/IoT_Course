@@ -51,4 +51,6 @@ bool mqtt_wait_for_job(unsigned long timeoutMs);
 // живе static усередині mqtt.cpp і назовні не видний.
 bool mqtt_publish_raw(const char* topic, const char* payload);
 
+// Публікація події                
+void mqtt_publish_event(uint8_t event_id, uint8_t value);
 #endif

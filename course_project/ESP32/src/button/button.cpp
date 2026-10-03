@@ -1,6 +1,8 @@
 #include "button.h"
 #include "../tools/tools.h"
 
+
+bool buttonPressed = false;
 // Порожньо. Реалізація кнопки — тут.
 unsigned long lastDebounce    = 0;
 bool          lastButtonState = HIGH;
@@ -10,6 +12,7 @@ bool          buttonState     = HIGH;
 void button_begin()
 {
    pinMode(BUTTON_PIN, INPUT_PULLUP);
+
 } 
 // Обробка кнопки 
 void button_pressed()

@@ -9,6 +9,8 @@
 #include "wdt/wdt.h"
 #include "tools/tools.h"
 #include "net/net.h"
+#include "button/button.h"
+#include "driver/rtc_io.h"
 #include "version.h"
 
 // ═══════════════════════════════════════════════════════════
@@ -49,6 +51,7 @@ static void go_to_sleep() {
     // Гасимо індикацію ДО фінального друку — цей виклик логує в Serial,
     // а після flush() друкувати вже не можна.
     led_set("off");
+    
 
     // ═══ ЗАКРИВАЄМО МЕРЕЖУ ═══
     // Wi-Fi драйвер має власні задачі й переривання. Іти в сон
@@ -75,11 +78,36 @@ static void go_to_sleep() {
     // Розбір, чому саме так, — у src/wdt/wdt.cpp.
     wdt_silence_for_sleep();
 
-    // Оці два рядки і є Deep Sleep: керування сюди більше не
-    // повертається, а через sleepSeconds чіп стартує з нуля —
+    // Оці три рядки і є Deep Sleep: керування сюди більше не
+    // повертається, а через sleepSeconds або по натисканню кнопки чіп стартує з нуля —
     // з новим setup() і з живою RTC-памʼяттю.
+       
+    esp_sleep_enable_ext0_wakeup(BUTTON_PIN, 0); // Вихід зі сну по натисканню кнопки.
     esp_sleep_enable_timer_wakeup((uint64_t)sleepSeconds * 1000000ULL);
     esp_deep_sleep_start();
+}
+
+
+
+void handle_wakeup_reason(){
+  esp_sleep_wakeup_cause_t wakeup_reason;
+
+  wakeup_reason = esp_sleep_get_wakeup_cause();
+
+  switch(wakeup_reason)
+  {
+    case ESP_SLEEP_WAKEUP_EXT0 :
+    { 
+      Serial.println("Пробудження по кнопці (EXT0)"); 
+      buttonPressed = true;
+      break;
+    }   
+    case ESP_SLEEP_WAKEUP_EXT1 : Serial.println("Пробудження по RTC_CNTL"); break;
+    case ESP_SLEEP_WAKEUP_TIMER : Serial.println("Пробудження по таймеру"); break;
+    case ESP_SLEEP_WAKEUP_TOUCHPAD : Serial.println("Пробудження по тачпаду"); break;
+    case ESP_SLEEP_WAKEUP_ULP : Serial.println("Пробудження по ULP"); break;
+    default : Serial.printf("Пробудження не з Deep Sleep : %d\n",wakeup_reason); break;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -110,6 +138,8 @@ static void work_cycle() {
                   (int)esp_reset_reason(),
                   bootCount);
 
+    
+    handle_wakeup_reason();                  
     // ── ВІДНОВЛЮЄМО ФАКТИЧНИЙ СТАН ──
     // Deep Sleep знеструмлює GPIO — світлодіод гасне сам собою.
     // Якщо цього не зробити, вийде брехня: у reported тіні написано
@@ -132,6 +162,12 @@ static void work_cycle() {
         return;
     }
      
+    // Якщо вихід з DeepSleep був через кнопку, публікуємо подію. 
+    if(buttonPressed)
+    {
+        buttonPressed = false;
+        mqtt_publish_event(BUTTON_EVENT, 1);
+    }
 
     // ═══════════════════════════════════════════════════════════
     // ПІДТВЕРДЖУЄМО ОБРАЗ: «я завантажився і працюю»
@@ -152,7 +188,8 @@ static void work_cycle() {
     // ═══════════════════════════════════════════════════════════
     esp_ota_mark_app_valid_cancel_rollback();
 
-       
+    
+
 
     // ── 3. Чи є оновлення? ──
     // Запит уже опублікований усередині mqtt_connect(). Тут ми даємо
@@ -232,6 +269,7 @@ void setup() {
     led_begin();
     ldr_begin();
     dht_begin();
+    button_begin();
        
     work_cycle();
 }
@@ -246,41 +284,14 @@ void setup() {
 // НАЗАВЖДИ. Тому тут не заглушка, а спроба заснути далі.
 // ═══════════════════════════════════════════════════════════
 void loop() {
-   /* for debug
-
-    if (!mqtt_connected()) {
-        
-        // Обробка помилок
-       if(!net_wifi_connected() || !timeSynchronized)
-          {
-            if(!errorMessagePrinted)
-            {  
-                errorMessagePrinted = true;
-                Serial.println("Перевірте мережу та перезавантажте пристрій.");
-            } 
-            return;
-          }
-
-        mqtt_reconnect_tick();
-        return;
-    }
-
-
-      mqtt_poll();
-      DHTTData dhttData;
-      LDRData ldrData;                
-      read_sensors(&ldrData, &dhttData, true);     
-      mqtt_publish_telemetry(dhttData.temperature, dhttData.humidity, ldrData.lux);
-      delay(1000);
-    
-      return;
-      */
-    // end of for debug 
 
   if (otaInProgress) {
         mqtt_poll();
         delay(1000);
-        return;
+        if(buttonPressed)
+           buttonPressed = false;
+        else
+         return;
     }
   
     work_cycle();

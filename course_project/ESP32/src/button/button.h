@@ -3,12 +3,15 @@
 
 // Кнопка (btn1 у diagram.json), один контакт -> D5, другий -> GND
 // Тому INPUT_PULLUP: натиснуто == LOW
-#define BUTTON_PIN  5 
+#define BUTTON_PIN  GPIO_NUM_33
 
 // ═══════════════════════════════════════════════════════════
 // DEBOUNCE
 // ═══════════════════════════════════════════════════════════
 #define DEBOUNCE 50 // мс
+#define BUTTON_PIN_BITMASK 0x200000000
+
+extern bool buttonPressed;
 
 // Сюди йде код по кнопці:
 // button_begin()   — pinMode(BUTTON_PIN, INPUT_PULLUP)
