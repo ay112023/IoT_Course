@@ -1,5 +1,5 @@
 {
   "operation": "ota",
-  "version": "1.1.0",
-  "url": "${aws:iot:s3-presigned-url-v2:https://iot-course-demo.s3.eu-north-1.amazonaws.com/firmware.bin}"
+  "version": "1.0.0",
+  "url": "${aws:iot:s3-presigned-url-v2:https://iot-course-test-bucket.s3.eu-north-1.amazonaws.com/firmware.bin}"
 }

@@ -270,7 +270,7 @@ void ota_handle_job(const char* jobDocument) {
     // Не вимикаємо (disableCore0WDT): у ядрі 3.x хук IDLE0 після відписки
     // сотні разів на секунду друкує "task_wdt: ... task not found".
     // idle_core_mask = 1 — під наглядом лише IDLE0, як і в стандартній збірці.
-    // esp_task_wdt_config_t wdtOta = { 60000, 1, true };
+    //   esp_task_wdt_config_t wdtOta = { 60000, 1, true };
     // esp_task_wdt_reconfigure(&wdtOta);
        esp_task_wdt_init(60, true);
 
