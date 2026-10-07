@@ -176,7 +176,7 @@ static void work_cycle() {
     // (desired == reported) і дельту не надішле — світло вже ніколи
     // не увімкнеться. Тінь має відповідати реальності, а реальність
     // після сну треба відтворювати руками.
-    led_set(indicator);
+    // led_set("Off");
 
     // ── 1-2. Мережа, час, TLS, MQTT + підписки ──
     if (!mqtt_begin_retry(1000, 30000)) {
@@ -197,6 +197,34 @@ static void work_cycle() {
         buttonPressed = false;
         mqtt_publish_event(BUTTON_EVENT, 1);
     }
+    
+    
+    // ──  Який стан має бути? ──
+    // Ось відповідь на проблему, яку ми створили сном: команда — це
+    // подія, вона губиться, поки ми спимо. Тінь — це стан, вона лежить
+    // і чекає. Пристрій сам приходить і питає.
+    shadow_request();
+    shadow_wait_for_delta(WAIT_SHADOW_MS);
+
+    ShadowDelta delta;
+    if (shadow_take_delta(&delta)) {
+
+        if (delta.hasIndicator) {
+            strncpy(indicator, delta.indicator, sizeof(indicator) - 1);
+            indicator[sizeof(indicator) - 1] = '\0';
+            led_set(indicator);
+        }
+
+        if (delta.hasInterval) {
+            sleepSeconds = delta.interval;
+            Serial.print("[MAIN] Новий інтервал сну: ");
+            Serial.println(sleepSeconds);
+        }
+
+        shadow_report(indicator, sleepSeconds);
+    }
+
+     
 
     // ═══════════════════════════════════════════════════════════
     // ПІДТВЕРДЖУЄМО ОБРАЗ: «я завантажився і працюю»
@@ -247,31 +275,7 @@ static void work_cycle() {
             mqtt_publish_telemetry(dhttData.temperature, dhttData.humidity, ldrData.lux);      
       }  
 
-    // ── 5. Який стан має бути? ──
-    // Ось відповідь на проблему, яку ми створили сном: команда — це
-    // подія, вона губиться, поки ми спимо. Тінь — це стан, вона лежить
-    // і чекає. Пристрій сам приходить і питає.
-    shadow_request();
-    shadow_wait_for_delta(WAIT_SHADOW_MS);
-
-    ShadowDelta delta;
-    if (shadow_take_delta(&delta)) {
-
-        if (delta.hasIndicator) {
-            strncpy(indicator, delta.indicator, sizeof(indicator) - 1);
-            indicator[sizeof(indicator) - 1] = '\0';
-            led_set(indicator);
-        }
-
-        if (delta.hasInterval) {
-            sleepSeconds = delta.interval;
-            Serial.print("[MAIN] Новий інтервал сну: ");
-            Serial.println(sleepSeconds);
-        }
-
-        shadow_report(indicator, sleepSeconds);
-    }
-
+   
     // ── Команда з Заняття 14 ──
     // Могла прилетіти, поки ми крутили poll в очікуваннях вище.
     // Чесне обмеження: доходить лише якщо її опублікували саме
@@ -283,6 +287,7 @@ static void work_cycle() {
     }
 
     // ── 6. Спати ──
+    shadow_report("off", sleepSeconds); // Звітуємо стан перед сном, щоб тінь знала, LED вимкнено.
     go_to_sleep();
 }
 
