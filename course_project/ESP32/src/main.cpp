@@ -26,10 +26,10 @@
 // ═══════════════════════════════════════════════════════════
 RTC_DATA_ATTR int  bootCount    = 0;
 RTC_DATA_ATTR int  sleepSeconds = 60;
-RTC_DATA_ATTR char indicator[8] = "on";   // чи світитись під час роботи
+RTC_DATA_ATTR char indicator[8] = "off";   // чи світитись під час роботи
 
 #define WAIT_JOB_MS     2000   // скільки чекаємо відповідь про роботу
-#define WAIT_SHADOW_MS  2000   // скільки чекаємо дельту тіні
+#define WAIT_SHADOW_MS  5000   // скільки чекаємо дельту тіні
 
 bool errorMessagePrinted = false;
 // ═══════════════════════════════════════════════════════════
@@ -176,7 +176,7 @@ static void work_cycle() {
     // (desired == reported) і дельту не надішле — світло вже ніколи
     // не увімкнеться. Тінь має відповідати реальності, а реальність
     // після сну треба відтворювати руками.
-    // led_set("Off");
+     led_set(indicator);
 
     // ── 1-2. Мережа, час, TLS, MQTT + підписки ──
     if (!mqtt_begin_retry(1000, 30000)) {
@@ -283,11 +283,13 @@ static void work_cycle() {
     // Саме тому надійне керування живе в тіні, а не в командах.
     const char* cmd = mqtt_take_command();
     if (cmd) {
-        led_handle_command(cmd);
+         led_handle_command(cmd);
+         strncpy(indicator, cmd, sizeof(cmd) - 1);
+         indicator[sizeof(indicator) - 1] = '\0';
+         shadow_report(indicator, sleepSeconds);
     }
 
-    // ── 6. Спати ──
-    shadow_report("off", sleepSeconds); // Звітуємо стан перед сном, щоб тінь знала, LED вимкнено.
+    // ── 6. Спати ── 
     go_to_sleep();
 }
 

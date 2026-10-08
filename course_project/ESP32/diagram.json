@@ -27,7 +27,7 @@
     ["dht1:GND", "esp:GND.1", "black", []],
     ["dht1:SDA", "esp:D4", "yellow", []],
     ["r2:1", "esp:3V3", "red", []],
-    ["r2:2", "btn1:1.r", "green", []]
+    ["r2:2", "esp:D33", "green", []]
   ],
   "dependencies": {}
 }

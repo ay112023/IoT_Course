@@ -129,6 +129,7 @@ bool shadow_take_delta(ShadowDelta* out) {
     JsonObject delta;
 
     if (fromGetAccepted) {
+
         // Повний документ. Поля delta НЕМАЄ ВЗАГАЛІ, якщо desired
         // і reported збігаються — це нормальна відповідь «все правильно».
         if (!doc["state"]["delta"].is<JsonObject>()) {

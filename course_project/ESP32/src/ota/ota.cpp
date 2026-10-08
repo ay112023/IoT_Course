@@ -299,7 +299,7 @@ void ota_handle_job(const char* jobDocument) {
         // стандартний спосіб завершити OTA. 100 мс сну коштують нічого.
          esp_sleep_enable_timer_wakeup(100000);   // 100 мс
          esp_deep_sleep_start();
-        //  ESP.restart();
+        //ESP.restart();
     }
 
     // ── Тільки при невдачі ──
