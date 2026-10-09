@@ -50,10 +50,11 @@ bool timeSynchronized;
 static void onMessage(char* topic, byte* payload, unsigned int length) {
 
     // ── Тінь (Заняття 16) ──
-    // Віддаємо в свій модуль. Він поверне true, якщо топік був його.
-    if (shadow_on_message(topic, payload, length)) {
-        return;
+    // Віддаємо в свій модуль. Він поверне true, якщо топік був його.   
+    if(shadow_on_message(topic, payload, length)){ 
+       return;
     }
+
 
     // ── Команда на світлодіод (Заняття 14) ──
     if (strstr(topic, "/commands/led") != NULL) {
@@ -382,7 +383,7 @@ void mqtt_publish_telemetry(float temperature, float humidity, float lux) {
 }
 
 // Потрібна shadow.cpp: клієнт живе static тут і назовні не видний.
-bool mqtt_publish_raw(const char* topic, const char* payload) {
+bool mqtt_publish_raw(const char* topic, const char* payload) {   
     return mqttClient.publish(topic, payload);
 }
 

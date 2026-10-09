@@ -11,8 +11,9 @@ iot = boto3.client("iot-data")
 
 
 def send_led_command(value: str):
-    payload = json.dumps(
-        {"action": "set", "value": value},
-        separators=(",", ":"),      # без пробілів — коротший payload
-    )
-    iot.publish(topic=TOPIC_CMD, qos=1, payload=payload)
+    #payload = json.dumps(
+    #   {"action": "set", "value": value},
+    #    separators=(",", ":"),      # без пробілів — коротший payload
+    #)
+    #iot.publish(topic=TOPIC_CMD, qos=1, payload=payload)    
+    iot.update_thing_shadow(thingName="esp32_yakymovich",payload=json.dumps({"state": {"desired": {"indicator": value}}}),)

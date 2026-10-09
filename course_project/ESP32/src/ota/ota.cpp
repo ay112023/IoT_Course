@@ -297,9 +297,9 @@ void ota_handle_job(const char* jobDocument) {
         // ЖИВЕ: змінні RTC_DATA_ATTR нова прошивка отримає від старої.
         // Це обхід специфіки Wokwi; на реальній платі ESP.restart() —
         // стандартний спосіб завершити OTA. 100 мс сну коштують нічого.
-         esp_sleep_enable_timer_wakeup(100000);   // 100 мс
-         esp_deep_sleep_start();
-        //ESP.restart();
+        esp_sleep_enable_timer_wakeup(100000);   // 100 мс
+        esp_deep_sleep_start();
+        // ESP.restart();
     }
 
     // ── Тільки при невдачі ──

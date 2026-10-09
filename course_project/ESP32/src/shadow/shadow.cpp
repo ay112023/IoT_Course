@@ -27,7 +27,8 @@ static char          rejectBuf[160];
 // а поки ми в callback — не летить PING.
 // ═══════════════════════════════════════════════════════════
 bool shadow_on_message(char* topic, byte* payload, unsigned int length) {
-
+   
+    
     // ── Відповідь на НАШ запис ──
     // Ловимо першими: тіло сюди не копіюємо в спільний shadowBuf.
     if (strstr(topic, "/shadow/update/accepted") != NULL) {
@@ -46,10 +47,12 @@ bool shadow_on_message(char* topic, byte* payload, unsigned int length) {
 
     bool isDelta = (strstr(topic, "/shadow/update/delta") != NULL);
     bool isGet   = (strstr(topic, "/shadow/get/accepted") != NULL);
+    
 
-    if (!isDelta && !isGet) {
+    if (!isDelta && !isGet) {       
         return false;   // не наше — хай розбирається mqtt.cpp далі
     }
+
 
     if (length >= sizeof(shadowBuf)) {
         Serial.println("[SHADOW] Документ не влазить у буфер");
@@ -58,6 +61,8 @@ bool shadow_on_message(char* topic, byte* payload, unsigned int length) {
 
     memcpy(shadowBuf, payload, length);
     shadowBuf[length] = '\0';       // payload приходить без термінатора
+
+ 
 
     fromGetAccepted = isGet;
     shadowReady     = true;         // роботу зробить setup()
