@@ -117,7 +117,7 @@ static void go_to_sleep() {
 }
 
 
-
+// Обробка поді' пробудження
 void handle_wakeup_reason(){
   esp_sleep_wakeup_cause_t wakeup_reason;
 
@@ -178,7 +178,7 @@ static void work_cycle() {
     // після сну треба відтворювати руками.
      led_set(indicator);
 
-    // ── 1-2. Мережа, час, TLS, MQTT + підписки ──
+    // ──  Мережа, час, TLS, MQTT + підписки ──
     if (!mqtt_begin_retry(1000, 30000)) {
         Serial.println("[MAIN] Мережа недоступна — спимо до наступної спроби");
         go_to_sleep();
@@ -218,13 +218,20 @@ static void work_cycle() {
     esp_ota_mark_app_valid_cancel_rollback();
 
     
-    // ── 3. Чи є оновлення? ──
+    // ── Чи є оновлення? ──
     // Запит уже опублікований усередині mqtt_connect(). Тут ми даємо
     // відповіді шанс приїхати: крутимо poll, поки не прийде або
     // не вийде час. delay() тут не спрацював би — він не читає сокет.
+    // Upd:
+    // Робимо цей виклик саме після виклику mqtt_connect_retry() бо 
+    // там викликається  mqtt_request_next_job();
+    // та відповідь від хмари про наявність Job-у може попасти у ту частину 
+    // callback-у, що обробляє shadow, а не jobs.
+    // На платі ESP32 DevKit v1. таке попадання приводе до того, що прошивка не баче
+    // документу від Shadow! А на WOKWI все працює.
     mqtt_wait_for_job(WAIT_JOB_MS);
     
-  
+                          
     const char* job = mqtt_take_job();
     if (job) {
         // Синхронно: качаємо і пишемо прямо тут.
@@ -238,6 +245,9 @@ static void work_cycle() {
     // Ось відповідь на проблему, яку ми створили сном: команда — це
     // подія, вона губиться, поки ми спимо. Тінь — це стан, вона лежить
     // і чекає. Пристрій сам приходить і питає.
+    // Upd:
+    // Тут робимо так само як із Jobs: запитуємо Shadow та одразу
+    // чекаємо відповіді!
     shadow_request();
     shadow_wait_for_delta(WAIT_SHADOW_MS);
 
@@ -259,9 +269,8 @@ static void work_cycle() {
         shadow_report(indicator, sleepSeconds);
     }
     
-    // ── 4. Віддали вимір ──
-    // Поки що випадкові числа. Реальні DHT22 і фоторезистор — ваша
-    // частина в курсовому.
+    
+    // Опитування сенсорів та публікація телеметрії
 
       DHTTData dhttData;
       LDRData ldrData;                
@@ -270,12 +279,14 @@ static void work_cycle() {
             mqtt_publish_telemetry(dhttData.temperature, dhttData.humidity, ldrData.lux);      
       }  
 
-   
-    // ── Команда з Заняття 14 ──
     // Могла прилетіти, поки ми крутили poll в очікуваннях вище.
     // Чесне обмеження: доходить лише якщо її опублікували саме
     // в це вузьке вікно. Все, що надіслали під час сну — втрачено.
     // Саме тому надійне керування живе в тіні, а не в командах.
+    // Upd:
+    // Тому тут керування LED-ом через топік не використовуємо
+    // а робимо через Shadow. Але залишаємо для тестів.
+    // Якщо прилетіла команда, обробляємо її і відразу віддаємо в тінь.
     const char* cmd = mqtt_take_command();
     if (cmd) {
          led_handle_command(cmd);
@@ -284,7 +295,7 @@ static void work_cycle() {
          shadow_report(indicator, sleepSeconds);
     }
 
-    // ── 6. Спати ── 
+    // ── Спати ── 
     go_to_sleep();
 }
 

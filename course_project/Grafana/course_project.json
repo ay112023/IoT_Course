@@ -291,9 +291,11 @@
               "fieldConfig": {
                 "defaults": {
                   "color": {
-                    "fixedColor": "red",
-                    "mode": "fixed"
+                    "mode": "thresholds"
                   },
+                  "max": 5000,
+                  "min": 0,
+                  "noValue": "-",
                   "thresholds": {
                     "mode": "percentage",
                     "steps": [
@@ -308,6 +310,14 @@
                       {
                         "color": "red",
                         "value": 80
+                      },
+                      {
+                        "color": "#6ED0E0",
+                        "value": 90
+                      },
+                      {
+                        "color": "#EF843C",
+                        "value": 100
                       }
                     ]
                   }
@@ -315,27 +325,27 @@
                 "overrides": []
               },
               "options": {
-                "barShape": "rounded",
-                "barWidthFactor": 0.25,
+                "barShape": "flat",
+                "barWidthFactor": 0.54,
                 "effects": {
-                  "barGlow": true,
-                  "centerGlow": true,
-                  "gradient": true
+                  "barGlow": false,
+                  "centerGlow": false,
+                  "gradient": false
                 },
-                "endpointMarker": "glow",
+                "endpointMarker": "point",
                 "minVizHeight": 75,
                 "minVizWidth": 75,
                 "orientation": "auto",
                 "reduceOptions": {
                   "calcs": [],
-                  "fields": "/.*/",
+                  "fields": "/^light_level$/",
                   "values": false
                 },
                 "segmentCount": 1,
                 "segmentSpacing": 0.3,
                 "shape": "circle",
                 "showThresholdLabels": false,
-                "showThresholdMarkers": false,
+                "showThresholdMarkers": true,
                 "sizing": "auto",
                 "sparkline": true,
                 "textMode": "auto"
@@ -594,7 +604,7 @@
                     "properties": [
                       {
                         "id": "custom.width",
-                        "value": 211
+                        "value": 183
                       }
                     ]
                   },
@@ -705,7 +715,7 @@
         "1d"
       ],
       "fiscalYearStartMonth": 0,
-      "from": "now-12h",
+      "from": "now-24h",
       "hideTimepicker": false,
       "timezone": "browser",
       "to": "now"
