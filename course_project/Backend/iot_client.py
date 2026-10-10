@@ -1,3 +1,4 @@
+import os
 import json
 import boto3
 from dotenv import load_dotenv
@@ -5,6 +6,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 TOPIC_CMD = "iot-course/yakymovich/commands/led"
+DEVICE_ID = os.getenv("DEVICE_ID")
 
 # Регіон boto3 сам візьме з AWS_DEFAULT_REGION
 iot = boto3.client("iot-data")
@@ -16,4 +18,9 @@ def send_led_command(value: str):
     #    separators=(",", ":"),      # без пробілів — коротший payload
     #)
     #iot.publish(topic=TOPIC_CMD, qos=1, payload=payload)    
-    iot.update_thing_shadow(thingName="esp32_yakymovich",payload=json.dumps({"state": {"desired": {"indicator": value}}}),)
+    iot.update_thing_shadow(thingName=DEVICE_ID,payload=json.dumps({"state": {"desired": {"indicator": value}}}),)
+
+def get_led_state():
+    response = iot.get_thing_shadow(thingName=DEVICE_ID)
+    payload = json.loads(response["payload"].read())
+    return payload["state"]["reported"]["indicator"]

@@ -79,6 +79,7 @@
 <div class="buttons">
   <button id="on" class="accent">Увімкнути</button>
   <button id="off">Вимкнути</button>
+  <button id="state">Стан LED</button>
 </div>
 
 <div id="result"><span class="label">Команду ще не надсилали</span></div>
@@ -110,10 +111,29 @@ async function send(value) {
     buttons.forEach(b => b.disabled = false);
   }
 }
+async function get_led_report() {
+    try {
+    const res = await fetch('http://localhost:8000/actuators/ledstate', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    // тіло читаємо як текст: показуємо як є, навіть якщо це не JSON
+    const body = await res.text();
+    result.textContent = res.status + '\n' + body;
+    result.insertAdjacentHTML('afterbegin',
+      '<span class="label">Запит стану LED надіслано. Відповідь сервера:</span>\n\n');
+  } catch (e) {
+    result.textContent = e.message;
+    result.insertAdjacentHTML('afterbegin',
+      '<span class="label error">Помилка мережі — команда не дійшла до сервера:</span>\n\n');
+  } finally {
+    buttons.forEach(b => b.disabled = false);
+  }
+}
 
 document.getElementById('on').onclick = () => send('on');
 document.getElementById('off').onclick = () => send('off');
+document.getElementById('state').onclick = () => get_led_report();
 </script>
 
-</body>
-</html>
+</body></html>

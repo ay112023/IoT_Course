@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 from pydantic import BaseModel
 from typing import Literal
-from iot_client import send_led_command
+from iot_client import send_led_command, get_led_state
 load_dotenv()          # ← до імпорту db, щоб змінні вже були в середовищі
 import db
 
@@ -56,3 +56,8 @@ def set_led(cmd:LedCommand):
         raise HTTPException(502, "AWS IoT недоступний")
     
     return {"accepted": True, "value": cmd.value}
+
+
+@app.get("/actuators/ledstate", status_code=202)
+def get_led():
+ return {"value": get_led_state()}  
