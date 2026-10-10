@@ -71,7 +71,7 @@
 │  │                              │                                                                                                              │                   │                         │   
 │  └─│────────────────────────▲───┘                                                                                                              │                   └────────┬────────────────┘
 └────┬────────────────────────│───────────────────────────▲────────────────────────▲───────────────────────▲────────────────────────┬────────────┘                            │
-     │ Subscribe              │ Publish                   │  Publish               │ Publish               │ Publish                │Subscribe                                │    HTTPS://URL GET : 
+     │ Subscribe              │ Publish                   │  Publish               │ Publish               │ Publish                │Subscribe                                │    HTTPS://presigned URL 
      │ topics:                │ topic:                    │  topic:                │  topic:               │  topic:                │ topics:                                 │    firmware.bin
      │  "$aws/things/         │   "$aws/things/           │     "iot-course/       │  "iot-course/         │   "$aws/things/jobs/   │  "$aws/things/                          │  
 	 │	 esp32_yakymovich     │    esp32_yakymovich/      │      yakymovcih/       │   yakymovich/         │    esp32_yakymovich/   │   esp32_yakymovich/                     │ 
@@ -79,7 +79,7 @@
      │ "$aws/things/          │   "$aws/things/           │  MQTT over TLS :8883   │  MQTT over TLS :8883  │  MQTT over TLS :8883   │  "$aws/things/                          │ 
      │   esp32_yakymovich/    │    esp32_yakymovich/      │                        │                       │                        │   esp32_yakymovich/                     │ 
      │   shadow/update/       │     shadow/update"        │                        │                       │                        │   jobs/$next/get/                       │
-     │   accepted",           │   MQTT over TLS :8883     │                        │                       │                        │    accepted"  : presigned URL           │ 
+     │   accepted",           │   MQTT over TLS :8883     │                        │                       │                        │    accepted"  : jobs.json               │ 
      │ "$aws/things/          │                           │                        │                       │                        │   MQTT over TLS :8883                   │
      │   esp32_yakymovich/    │                           │                        │                       │                        │                                         │
 	 │   shadow/update/       │                           │                        │                       │                        │                                         │
