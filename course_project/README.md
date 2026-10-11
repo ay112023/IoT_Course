@@ -14,7 +14,7 @@
 
 | Тека      | Роль | Технології |
 |---|---|---|
-| [`HTML/`](HTML/)       | Frontend -інтерфейс: дві кнопки | статичний HTML + `fetch` |
+| [`HTML/`](HTML/)       | Frontend -інтерфейс: три кнопки | статичний HTML + `fetch` |
 | [`Backend/`](FastAPI/) | бекенд: читає телеметрію, публікує команди | Python, FastAPI, boto3 |
 | [`ESP32/`](ESP32/)     | пристрій: публікує телеметрію, слухає команди | C++, PlatformIO, Wokwi |
 | [`Grafana/`](JSON)     | JSON файл для імпорту у Grafana й створення dashboard-у `HomeTask6`
