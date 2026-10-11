@@ -26,7 +26,7 @@
 // ═══════════════════════════════════════════════════════════
 RTC_DATA_ATTR int  bootCount    = 0;
 RTC_DATA_ATTR int  sleepSeconds = 60;
-RTC_DATA_ATTR char indicator[8] = "off";   // чи світитись під час роботи
+RTC_DATA_ATTR char indicator[8] = "off";   // спочатку не світимо, чекаємо на вказівки від shadow
 
 #define WAIT_JOB_MS     2000   // скільки чекаємо відповідь про роботу
 #define WAIT_SHADOW_MS  10000   // скільки чекаємо дельту тіні
@@ -311,7 +311,8 @@ void setup() {
     led_begin();
     ldr_begin();
     dht_begin();
-    button_begin();
+    button_begin(); // Цього, звісно, можна й не робити, бо PULL_UP зроблено апаратно
+                    // але так надійніше: якщо хтось випадково зробить pinMode() на кнопці, апаратний PULL_UP зникне. 
        
     work_cycle();
 }
