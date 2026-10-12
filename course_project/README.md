@@ -288,7 +288,7 @@
 ## Скріншоти
     1  Thing esp32_yakymovich
 	2  Policy my_policy1
-	3  Policy my_policy2
+	3  Policy my_policy2 - На жаль, обмежити топіки не вдалося.Якщо були задані явні permissions на гілки, нічого не робило...
 	4  Policy iot_events_read
 	5  Policy iot_telemetry2_add
 	6  Policy iot_telemetry2_read
