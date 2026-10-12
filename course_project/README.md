@@ -302,6 +302,7 @@
 	14 DynamoDB table iot_telemetry2
 	15 DynamoDB table iot_events
 	16 CloudWatch log group iot_telemetry2_alert
+	16-1 CloudWatch log group iot_telemetry2_alert : log stream `rule_iot_telemetry2_alert-1878382177`
 	17 OTA: S3 bucket iot-course-test-bucket
 	18 OTA: Job OTA_14 - оновлення
 	19 OTA: Запуск оновлення у Wokwi
